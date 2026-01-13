@@ -25,7 +25,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,13 +39,12 @@ import type { TransactionFilter } from '@/app/page';
 import { formatCurrency } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
-import { Trash2, Calendar as CalendarIcon, Filter, ListFilter } from 'lucide-react';
+import { Trash2, ListFilter } from 'lucide-react';
 import { useFirestore, deleteDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { DateRange } from 'react-day-picker';
-import { Calendar } from '../ui/calendar';
-import { format } from 'date-fns';
+import { MonthPicker } from './month-picker';
 
 
 interface RecentTransactionsProps {
@@ -85,8 +83,6 @@ export function RecentTransactions({ transactions, activeFilter, setFilter, date
     return 'Transaction';
   };
 
-  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
   return (
     <Card>
       <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -99,7 +95,7 @@ export function RecentTransactions({ transactions, activeFilter, setFilter, date
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8 gap-1">
                 <ListFilter className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Filter</span>
+                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Filter Type</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -112,40 +108,7 @@ export function RecentTransactions({ transactions, activeFilter, setFilter, date
               <DropdownMenuCheckboxItem checked={activeFilter === 'emi'} onCheckedChange={() => setFilter('emi')}>EMI</DropdownMenuCheckboxItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 gap-1"
-              >
-                <CalendarIcon className="h-3.5 w-3.5" />
-                 <span>
-                    {dateRange?.from ? (
-                      dateRange.to ? (
-                        <>
-                          {format(dateRange.from, "LLL dd")} - {format(dateRange.to, "LLL dd, y")}
-                        </>
-                      ) : (
-                        format(dateRange.from, "LLL dd, y")
-                      )
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
-                  </span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                initialFocus
-                mode="range"
-                defaultMonth={dateRange?.from}
-                selected={dateRange}
-                onSelect={setDateRange}
-                numberOfMonths={2}
-              />
-            </PopoverContent>
-          </Popover>
+          <MonthPicker dateRange={dateRange} setDateRange={setDateRange} />
         </div>
       </CardHeader>
       <CardContent>

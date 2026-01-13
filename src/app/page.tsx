@@ -17,7 +17,7 @@ import type {
 } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DateRange } from 'react-day-picker';
-import { subDays, startOfDay, endOfDay } from 'date-fns';
+import { startOfMonth, endOfMonth } from 'date-fns';
 
 export type TransactionFilter = 'all' | 'income' | 'home' | 'fuel' | 'emi';
 
@@ -27,8 +27,8 @@ export default function Dashboard() {
 
   const [filter, setFilter] = useState<TransactionFilter>('all');
    const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: subDays(new Date(), 29),
-    to: new Date(),
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date()),
   });
 
   const handleFilterAndScroll = (newFilter: TransactionFilter) => {
@@ -69,8 +69,8 @@ export default function Dashboard() {
       return defaultResult;
     }
     
-    const from = dateRange?.from ? startOfDay(dateRange.from) : null;
-    const to = dateRange?.to ? endOfDay(dateRange.to) : null;
+    const from = dateRange?.from ? startOfMonth(dateRange.from) : null;
+    const to = dateRange?.to ? endOfMonth(dateRange.to) : null;
 
     const inDateRange = (date: Date) => {
         if (from && to) return date >= from && date <= to;
