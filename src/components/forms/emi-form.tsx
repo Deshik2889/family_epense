@@ -20,8 +20,8 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
-import { collection, Timestamp, doc } from 'firebase/firestore';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { Timestamp, doc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 
 type EmiFormValues = z.infer<typeof EmiSchema>;
@@ -33,7 +33,6 @@ interface EmiFormProps {
 export function EmiForm({ setOpen }: EmiFormProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { user } = useUser();
 
   const form = useForm<EmiFormValues>({
     resolver: zodResolver(EmiSchema),
@@ -47,18 +46,9 @@ export function EmiForm({ setOpen }: EmiFormProps) {
   });
 
   async function onSubmit(data: EmiFormValues) {
-    if (!user) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'You must be logged in to add an EMI.',
-      });
-      return;
-    }
-
     try {
       const emiId = uuidv4();
-      const emiDocRef = doc(firestore, `users/${user.uid}/emis/${emiId}`);
+      const emiDocRef = doc(firestore, `emis/${emiId}`);
       
       const payload = {
         id: emiId,

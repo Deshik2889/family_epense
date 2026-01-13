@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 
 import { calculateEmiProgress } from '@/lib/helpers';
@@ -20,13 +20,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Dashboard() {
   const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
 
   // Memoized collection references
-  const incomesRef = useMemoFirebase(() => user ? collection(firestore, `users/${user.uid}/incomes`) : null, [firestore, user]);
-  const fuelExpensesRef = useMemoFirebase(() => user ? collection(firestore, `users/${user.uid}/fuel_expenses`) : null, [firestore, user]);
-  const homeExpensesRef = useMemoFirebase(() => user ? collection(firestore, `users/${user.uid}/home_expenses`) : null, [firestore, user]);
-  const emisRef = useMemoFirebase(() => user ? collection(firestore, `users/${user.uid}/emis`) : null, [firestore, user]);
+  const incomesRef = useMemoFirebase(() => collection(firestore, `incomes`), [firestore]);
+  const fuelExpensesRef = useMemoFirebase(() => collection(firestore, `fuel_expenses`), [firestore]);
+  const homeExpensesRef = useMemoFirebase(() => collection(firestore, `home_expenses`), [firestore]);
+  const emisRef = useMemoFirebase(() => collection(firestore, `emis`), [firestore]);
 
   const recentIncomesQuery = useMemoFirebase(() => {
     if (!incomesRef) return null;
@@ -55,7 +54,7 @@ export default function Dashboard() {
   const { data: recentFuelExpenses, isLoading: recentFuelExpensesLoading } = useCollection<FuelExpense>(recentFuelExpensesQuery);
 
 
-  const isLoading = isUserLoading || incomesLoading || fuelLoading || homeLoading || emisLoading || recentIncomesLoading || recentHomeExpensesLoading || recentFuelExpensesLoading;
+  const isLoading = incomesLoading || fuelLoading || homeLoading || emisLoading || recentIncomesLoading || recentHomeExpensesLoading || recentFuelExpensesLoading;
 
   const {
     totalIncome,

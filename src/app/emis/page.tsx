@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Emi } from '@/lib/types';
 import { EmiCard } from '@/components/emis/emi-card';
@@ -10,12 +10,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function EmisPage() {
   const firestore = useFirestore();
-  const { user } = useUser();
 
   const emisCollectionRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return collection(firestore, `users/${user.uid}/emis`);
-  }, [firestore, user]);
+    return collection(firestore, `emis`);
+  }, [firestore]);
 
   const { data: emis, isLoading } = useCollection<Emi>(emisCollectionRef);
   
@@ -24,8 +22,8 @@ export default function EmisPage() {
     // Firestore doesn't guarantee order without an orderBy clause, so we sort client-side.
     // Also convert timestamp to date for calculation
     return [...emis]
-      .map(emi => ({ ...emi, startDate: emi.startDate.toDate(), name: emi.emiName || "Unnamed EMI" }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .map(emi => ({ ...emi, startDate: emi.startDate.toDate() }))
+      .sort((a, b) => a.emiName.localeCompare(b.emiName));
   }, [emis]);
 
   return (

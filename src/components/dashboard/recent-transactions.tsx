@@ -31,7 +31,7 @@ import { formatCurrency } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { Trash2 } from 'lucide-react';
-import { useFirestore, useUser, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirestore, deleteDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -41,23 +41,13 @@ interface RecentTransactionsProps {
 
 export function RecentTransactions({ transactions }: RecentTransactionsProps) {
   const firestore = useFirestore();
-  const { user } = useUser();
   const { toast } = useToast();
 
   const handleDelete = (tx: Transaction) => {
-    if (!user) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "You must be logged in to delete a transaction.",
-      });
-      return;
-    }
-
     let collectionPath = '';
-    if (tx.type === 'income') collectionPath = `users/${user.uid}/incomes`;
-    else if (tx.type === 'fuel') collectionPath = `users/${user.uid}/fuel_expenses`;
-    else if (tx.type === 'home') collectionPath = `users/${user.uid}/home_expenses`;
+    if (tx.type === 'income') collectionPath = `incomes`;
+    else if (tx.type === 'fuel') collectionPath = `fuel_expenses`;
+    else if (tx.type === 'home') collectionPath = `home_expenses`;
 
     if (collectionPath) {
       const docRef = doc(firestore, collectionPath, tx.id);
@@ -93,9 +83,9 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
                   <div className="font-medium">{tx.date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
                 </TableCell>
                 <TableCell>
-                  <Badge 
+                  <Badge
                     variant={tx.type === 'income' ? 'default' : 'secondary'}
-                     className={cn(
+                    className={cn(
                       'text-xs font-medium',
                       tx.type === 'income' ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800' : 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800'
                     )}

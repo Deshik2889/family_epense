@@ -24,7 +24,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { HOME_EXPENSE_CATEGORIES } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { Timestamp, doc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -42,7 +42,6 @@ interface ExpenseFormProps {
 export function ExpenseForm({ setOpen }: ExpenseFormProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { user } = useUser();
   
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(FormSchema),
@@ -56,15 +55,6 @@ export function ExpenseForm({ setOpen }: ExpenseFormProps) {
   const expenseType = form.watch('expenseType');
 
   async function onSubmit(data: ExpenseFormValues) {
-     if (!user) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'You must be logged in to add an expense.',
-      });
-      return;
-    }
-
     try {
         const expenseId = uuidv4();
         let docRef;
@@ -75,9 +65,9 @@ export function ExpenseForm({ setOpen }: ExpenseFormProps) {
         };
 
         if (data.expenseType === 'fuel') {
-            docRef = doc(firestore, `users/${user.uid}/fuel_expenses/${expenseId}`);
+            docRef = doc(firestore, `fuel_expenses/${expenseId}`);
         } else {
-            docRef = doc(firestore, `users/${user.uid}/home_expenses/${expenseId}`);
+            docRef = doc(firestore, `home_expenses/${expenseId}`);
             payload.category = data.category;
             payload.notes = data.notes || '';
         }

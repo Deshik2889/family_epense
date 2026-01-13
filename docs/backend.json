@@ -15,19 +15,15 @@
           "description": "The date the income was received.",
           "format": "date-time"
         },
-        "amountReceived": {
+        "amount": {
           "type": "number",
           "description": "The amount of income received."
-        },
-        "fuelExpenseId": {
-          "type": "string",
-          "description": "Reference to FuelExpense. (Relationship: Income 1:1 FuelExpense)"
         }
       },
       "required": [
         "id",
         "date",
-        "amountReceived"
+        "amount"
       ]
     },
     "FuelExpense": {
@@ -121,13 +117,6 @@
           "type": "string",
           "description": "The start date of the EMI.",
           "format": "date-time"
-        },
-        "emiPaymentIds": {
-          "type": "array",
-          "description": "References to EmiPayment. (Relationship: Emi 1:N EmiPayment)",
-          "items": {
-            "type": "string"
-          }
         }
       },
       "required": [
@@ -138,152 +127,54 @@
         "totalMonths",
         "startDate"
       ]
-    },
-    "EmiPayment": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "EmiPayment",
-      "type": "object",
-      "description": "Represents an EMI Payment record.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the EMI payment record."
-        },
-        "date": {
-          "type": "string",
-          "description": "The date the payment was made.",
-          "format": "date-time"
-        },
-        "amount": {
-          "type": "number",
-          "description": "The amount of the payment."
-        },
-        "emiId": {
-          "type": "string",
-          "description": "Reference to Emi. (Relationship: Emi 1:N EmiPayment)"
-        }
-      },
-      "required": [
-        "id",
-        "date",
-        "amount",
-        "emiId"
-      ]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": []
   },
   "firestore": {
     "structure": [
       {
-        "path": "/users/{userId}/incomes/{incomeId}",
+        "path": "/incomes/{incomeId}",
         "definition": {
           "entityName": "Income",
           "schema": {
             "$ref": "#/backend/entities/Income"
           },
-          "description": "Stores income records for a specific user. Path-based ownership ensures only the user can access their own income data.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "incomeId",
-              "description": "The unique identifier of the income record."
-            }
-          ]
+          "description": "Stores all income records."
         }
       },
       {
-        "path": "/users/{userId}/fuel_expenses/{fuelExpenseId}",
+        "path": "/fuel_expenses/{fuelExpenseId}",
         "definition": {
           "entityName": "FuelExpense",
           "schema": {
             "$ref": "#/backend/entities/FuelExpense"
           },
-          "description": "Stores fuel expense records for a specific user. Path-based ownership ensures only the user can access their own fuel expense data.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "fuelExpenseId",
-              "description": "The unique identifier of the fuel expense record."
-            }
-          ]
+          "description": "Stores all fuel expense records."
         }
       },
       {
-        "path": "/users/{userId}/home_expenses/{homeExpenseId}",
+        "path": "/home_expenses/{homeExpenseId}",
         "definition": {
           "entityName": "HomeExpense",
           "schema": {
             "$ref": "#/backend/entities/HomeExpense"
           },
-          "description": "Stores home expense records for a specific user. Path-based ownership ensures only the user can access their own home expense data.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "homeExpenseId",
-              "description": "The unique identifier of the home expense record."
-            }
-          ]
+          "description": "Stores all home expense records."
         }
       },
       {
-        "path": "/users/{userId}/emis/{emiId}",
+        "path": "/emis/{emiId}",
         "definition": {
           "entityName": "Emi",
           "schema": {
             "$ref": "#/backend/entities/Emi"
           },
-          "description": "Stores EMI records for a specific user. Path-based ownership ensures only the user can access their own EMI data.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "emiId",
-              "description": "The unique identifier of the EMI record."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/emis/{emiId}/emi_payments/{emiPaymentId}",
-        "definition": {
-          "entityName": "EmiPayment",
-          "schema": {
-            "$ref": "#/backend/entities/EmiPayment"
-          },
-          "description": "Stores EMI payment records for a specific user under a specific EMI. Path-based ownership ensures only the user can access their own EMI payment data.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "emiId",
-              "description": "The unique identifier of the EMI record."
-            },
-            {
-              "name": "emiPaymentId",
-              "description": "The unique identifier of the EMI payment record."
-            }
-          ]
+          "description": "Stores all EMI records."
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to organize and secure the financial data for the Family Finance Tracker application. It emphasizes path-based ownership for user-specific data, ensuring that each user (family member) can only access their own financial records.  Authorization Independence is achieved by storing all financial records (Income, FuelExpense, HomeExpense, Emi, and EmiPayment) under the user's document, eliminating the need for complex `get()` calls in security rules. This approach also supports QAPs by allowing secure list operations within each user's collection. The structure avoids custom claims (DBAC), relying solely on `request.auth.uid` and path-based ownership for authorization."
+    "reasoning": "The data structure is simplified to use root-level collections for all data types (incomes, expenses, EMIs). This approach removes user-specific data segregation, allowing all users of the application to access and manage the same shared dataset without any authentication. This is ideal for a trusted, single-family scenario."
   }
 }

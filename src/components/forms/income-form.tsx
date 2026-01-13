@@ -20,7 +20,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { Timestamp, doc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -34,7 +34,6 @@ interface IncomeFormProps {
 export function IncomeForm({ setOpen }: IncomeFormProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { user } = useUser();
 
   const form = useForm<IncomeFormValues>({
     resolver: zodResolver(IncomeSchema),
@@ -45,18 +44,9 @@ export function IncomeForm({ setOpen }: IncomeFormProps) {
   });
 
   async function onSubmit(data: IncomeFormValues) {
-    if (!user) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'You must be logged in to add income.',
-      });
-      return;
-    }
-
     try {
       const incomeId = uuidv4();
-      const incomeDocRef = doc(firestore, `users/${user.uid}/incomes/${incomeId}`);
+      const incomeDocRef = doc(firestore, `incomes/${incomeId}`);
       
       const payload = {
         id: incomeId,
