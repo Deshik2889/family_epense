@@ -4,7 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { calculateEmiProgress, formatCurrency } from "@/lib/helpers";
 import type { Emi } from "@/lib/types";
 
-export function EmiCard({ emi }: { emi: Emi }) {
+export function EmiCard({ emi }: { emi: Omit<Emi, 'startDate'> & { startDate: Date } }) {
   const { 
     paidMonths, 
     remainingMonths, 

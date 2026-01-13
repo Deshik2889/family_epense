@@ -3,7 +3,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { addEmi } from '@/lib/actions';
 import { EmiSchema } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +20,10 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
+import { collection, Timestamp } from 'firebase/firestore';
+import { v4 as uuidv4 } from 'uuid';
+import { revalidatePath } from 'next/cache';
 
 type EmiFormValues = z.infer<typeof EmiSchema>;
 
@@ -30,6 +33,9 @@ interface EmiFormProps {
 
 export function EmiForm({ setOpen }: EmiFormProps) {
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const { user } = useUser();
+
   const form = useForm<EmiFormValues>({
     resolver: zodResolver(EmiSchema),
     defaultValues: {
@@ -42,25 +48,39 @@ export function EmiForm({ setOpen }: EmiFormProps) {
   });
 
   async function onSubmit(data: EmiFormValues) {
-    const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
-      if (value instanceof Date) {
-        formData.append(key, value.toISOString());
-      } else {
-        formData.append(key, String(value));
-      }
-    });
-
-    const result = await addEmi(formData);
-    if (result?.success) {
-      toast({ title: 'Success', description: 'EMI added successfully.' });
-      setOpen(false);
-      form.reset();
-    } else {
+    if (!user) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: result?.error || 'Something went wrong.',
+        description: 'You must be logged in to add an EMI.',
+      });
+      return;
+    }
+
+    try {
+      const emiId = uuidv4();
+      const emisCollectionRef = collection(firestore, `users/${user.uid}/emis`);
+      
+      addDocumentNonBlocking(emisCollectionRef, {
+        id: emiId,
+        name: data.name,
+        vehicleType: data.vehicleType,
+        monthlyAmount: data.monthlyAmount,
+        totalMonths: data.totalMonths,
+        startDate: Timestamp.fromDate(data.startDate),
+      });
+
+      toast({ title: 'Success', description: 'EMI added successfully.' });
+      setOpen(false);
+      form.reset();
+      // Note: Automatic re-validation on the client will be handled by useCollection.
+      // If you need to trigger a server-side re-validation for other pages,
+      // you would need a server action.
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Something went wrong while adding the EMI.',
       });
     }
   }

@@ -3,13 +3,11 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { addExpense } from '@/lib/actions';
 import { ExpenseSchema } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -26,6 +24,9 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { HOME_EXPENSE_CATEGORIES } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
+import { collection, Timestamp } from 'firebase/firestore';
+import { v4 as uuidv4 } from 'uuid';
 
 const FormSchema = ExpenseSchema.extend({
   expenseType: z.enum(['fuel', 'home'], {
@@ -40,6 +41,9 @@ interface ExpenseFormProps {
 
 export function ExpenseForm({ setOpen }: ExpenseFormProps) {
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const { user } = useUser();
+  
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -52,28 +56,43 @@ export function ExpenseForm({ setOpen }: ExpenseFormProps) {
   const expenseType = form.watch('expenseType');
 
   async function onSubmit(data: ExpenseFormValues) {
-    const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
-      if (value) {
-        if (value instanceof Date) {
-            formData.append(key, value.toISOString());
-        } else {
-            formData.append(key, String(value));
-        }
-      }
-    });
-
-    const result = await addExpense(formData);
-    if (result?.success) {
-      toast({ title: 'Success', description: 'Expense added successfully.' });
-      setOpen(false);
-      form.reset();
-    } else {
+     if (!user) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: result?.error || 'Something went wrong.',
+        description: 'You must be logged in to add an expense.',
       });
+      return;
+    }
+
+    try {
+        const expenseId = uuidv4();
+        let collectionRef;
+        let payload:any = {
+            id: expenseId,
+            amount: data.amount,
+            date: Timestamp.fromDate(data.date),
+        };
+
+        if (data.expenseType === 'fuel') {
+            collectionRef = collection(firestore, `users/${user.uid}/fuel_expenses`);
+        } else {
+            collectionRef = collection(firestore, `users/${user.uid}/home_expenses`);
+            payload.category = data.category;
+            payload.notes = data.notes || '';
+        }
+        
+        addDocumentNonBlocking(collectionRef, payload);
+
+        toast({ title: 'Success', description: 'Expense added successfully.' });
+        setOpen(false);
+        form.reset();
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Something went wrong while adding the expense.',
+        });
     }
   }
 

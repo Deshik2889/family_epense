@@ -30,9 +30,9 @@ import { format, startOfMonth } from 'date-fns';
 import { formatCurrency } from '@/lib/helpers';
 
 interface ChartsProps {
-  incomes: Income[];
-  homeExpenses: HomeExpense[];
-  fuelExpenses: FuelExpense[];
+  incomes: (Omit<Income, 'date'> & { date: Date })[];
+  homeExpenses: (Omit<HomeExpense, 'date'> & { date: Date })[];
+  fuelExpenses: (Omit<FuelExpense, 'date'> & { date: Date })[];
 }
 
 export function Charts({ incomes, homeExpenses, fuelExpenses }: ChartsProps) {
@@ -40,18 +40,21 @@ export function Charts({ incomes, homeExpenses, fuelExpenses }: ChartsProps) {
     const data: { [key: string]: { month: string; income: number; expense: number } } = {};
 
     [...incomes, ...homeExpenses, ...fuelExpenses].forEach((item) => {
-      const month = format(startOfMonth(item.date), 'MMM yyyy');
-      if (!data[month]) {
-        data[month] = { month: format(startOfMonth(item.date), 'MMM'), income: 0, expense: 0 };
+      const monthKey = format(startOfMonth(item.date), 'yyyy-MM');
+      if (!data[monthKey]) {
+        data[monthKey] = { month: format(startOfMonth(item.date), 'MMM'), income: 0, expense: 0 };
       }
-      if ('category' in item || 'notes' in item) { // It's an expense
-        data[month].expense += item.amount;
+      if ('category' in item || item.hasOwnProperty('notes')) { // It's an expense
+        data[monthKey].expense += item.amount;
       } else {
-        data[month].income += item.amount;
+        data[monthKey].income += item.amount;
       }
     });
+    
+    // Sort keys to get the latest months, then take the last 6
+    const sortedMonthKeys = Object.keys(data).sort().slice(-6);
 
-    return Object.values(data).sort((a,b) => new Date(a.month).getTime() - new Date(b.month).getTime()).slice(-6); // Last 6 months
+    return sortedMonthKeys.map(key => data[key]);
   }, [incomes, homeExpenses, fuelExpenses]);
 
   const expenseBreakdown = useMemo(() => {
@@ -97,24 +100,26 @@ export function Charts({ incomes, homeExpenses, fuelExpenses }: ChartsProps) {
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-[250px] w-full">
-            <BarChart accessibilityLayer data={monthlyData}>
-              <XAxis
-                dataKey="month"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-                tickFormatter={(value) => value}
-              />
-              <YAxis tickFormatter={(value) => formatCurrency(Number(value) / 1000) + 'k'} />
-              <ChartTooltip
-                content={<ChartTooltipContent
-                  formatter={(value) => formatCurrency(value as number)}
-                />}
-              />
-              <ChartLegend content={<ChartLegendContent />} />
-              <Bar dataKey="income" fill="var(--color-income)" radius={4} />
-              <Bar dataKey="expense" fill="var(--color-expense)" radius={4} />
-            </BarChart>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart accessibilityLayer data={monthlyData}>
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                  tickFormatter={(value) => value}
+                />
+                <YAxis tickFormatter={(value) => formatCurrency(Number(value) / 1000) + 'k'} />
+                <ChartTooltip
+                  content={<ChartTooltipContent
+                    formatter={(value) => formatCurrency(value as number)}
+                  />}
+                />
+                <ChartLegend content={<ChartLegendContent />} />
+                <Bar dataKey="income" fill="var(--color-income)" radius={4} />
+                <Bar dataKey="expense" fill="var(--color-expense)" radius={4} />
+              </BarChart>
+            </ResponsiveContainer>
           </ChartContainer>
         </CardContent>
       </Card>
@@ -127,23 +132,25 @@ export function Charts({ incomes, homeExpenses, fuelExpenses }: ChartsProps) {
         <CardContent className="flex justify-center">
             {expenseBreakdown.length > 0 ? (
           <ChartContainer config={{}} className="h-[250px] w-full max-w-[250px]">
-            <PieChart>
-              <ChartTooltip
-                content={<ChartTooltipContent
-                  nameKey="name"
-                  formatter={(value, name) => `${formatCurrency(value as number)}`}
-                />}
-              />
-              <Pie data={expenseBreakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80}>
-                 {expenseBreakdown.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-              </Pie>
-              <ChartLegend
-                content={<ChartLegendContent nameKey="name" />}
-                className="[&_.recharts-legend-item]:w-full [&_.recharts-legend-item>span]:w-full [&_.recharts-legend-item>span]:truncate"
-               />
-            </PieChart>
+             <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                <ChartTooltip
+                    content={<ChartTooltipContent
+                    nameKey="name"
+                    formatter={(value) => `${formatCurrency(value as number)}`}
+                    />}
+                />
+                <Pie data={expenseBreakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80}>
+                    {expenseBreakdown.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                </Pie>
+                <ChartLegend
+                    content={<ChartLegendContent nameKey="name" />}
+                    className="[&_.recharts-legend-item]:w-full [&_.recharts-legend-item>span]:w-full [&_.recharts-legend-item>span]:truncate"
+                />
+                </PieChart>
+            </ResponsiveContainer>
           </ChartContainer>
           ) : (
             <div className="flex h-[250px] items-center justify-center text-muted-foreground">

@@ -3,7 +3,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { addIncome } from '@/lib/actions';
 import { IncomeSchema } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +20,10 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
+import { collection, Timestamp } from 'firebase/firestore';
+import { v4 as uuidv4 } from 'uuid';
+
 
 type IncomeFormValues = z.infer<typeof IncomeSchema>;
 
@@ -30,6 +33,9 @@ interface IncomeFormProps {
 
 export function IncomeForm({ setOpen }: IncomeFormProps) {
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const { user } = useUser();
+
   const form = useForm<IncomeFormValues>({
     resolver: zodResolver(IncomeSchema),
     defaultValues: {
@@ -39,20 +45,32 @@ export function IncomeForm({ setOpen }: IncomeFormProps) {
   });
 
   async function onSubmit(data: IncomeFormValues) {
-    const formData = new FormData();
-    formData.append('amount', String(data.amount));
-    formData.append('date', data.date.toISOString());
-
-    const result = await addIncome(formData);
-    if (result?.success) {
-      toast({ title: 'Success', description: 'Income added successfully.' });
-      setOpen(false);
-      form.reset();
-    } else {
+    if (!user) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: result?.error || 'Something went wrong.',
+        description: 'You must be logged in to add income.',
+      });
+      return;
+    }
+
+    try {
+      const incomeId = uuidv4();
+      const incomeCollectionRef = collection(firestore, `users/${user.uid}/incomes`);
+      addDocumentNonBlocking(incomeCollectionRef, {
+        id: incomeId,
+        amount: data.amount,
+        date: Timestamp.fromDate(data.date),
+      });
+
+      toast({ title: 'Success', description: 'Income added successfully.' });
+      setOpen(false);
+      form.reset();
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Something went wrong while adding income.',
       });
     }
   }

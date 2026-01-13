@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { HOME_EXPENSE_CATEGORIES } from './constants';
+import { Timestamp } from 'firebase/firestore';
 
 // Schemas for form validation
 export const IncomeSchema = z.object({
@@ -10,7 +11,9 @@ export const IncomeSchema = z.object({
 export const ExpenseSchema = z.object({
   amount: z.number().positive('Amount must be positive'),
   date: z.date(),
-  category: z.enum(HOME_EXPENSE_CATEGORIES).optional(),
+  category: z.enum(HOME_EXPENSE_CATEGORIES, {
+    errorMap: () => ({ message: "Please select a category." }),
+  }).optional(),
   notes: z.string().optional(),
 });
 
@@ -22,32 +25,41 @@ export const EmiSchema = z.object({
   startDate: z.date(),
 });
 
-// TypeScript types for data from Firestore
+// Base interface for documents from Firestore that include a date
 export interface BaseDoc {
   id: string;
-  date: Date;
+  date: Timestamp; // Using Firestore Timestamp
   amount: number;
 }
 
-export interface Income extends BaseDoc {}
+// Specific data types that extend the base
+export interface Income extends Omit<BaseDoc, 'date'> {
+  date: Timestamp;
+}
 
-export interface FuelExpense extends BaseDoc {}
+export interface FuelExpense extends Omit<BaseDoc, 'date'> {
+  date: Timestamp;
+}
 
-export interface HomeExpense extends BaseDoc {
+export interface HomeExpense extends Omit<BaseDoc, 'date'> {
+  date: Timestamp;
   category: typeof HOME_EXPENSE_CATEGORIES[number];
   notes?: string;
 }
 
+// Type for EMI data
 export interface Emi {
   id: string;
   name: string;
   vehicleType: string;
   monthlyAmount: number;
   totalMonths: number;
-  startDate: Date;
+  startDate: Timestamp; // Using Firestore Timestamp
 }
 
+// A union type for transactions that can be displayed in a list.
+// The 'date' here is a JS Date object, converted from a Timestamp for display.
 export type Transaction = 
-  | (Income & { type: 'income' })
-  | (HomeExpense & { type: 'home' })
-  | (FuelExpense & { type: 'fuel' });
+  | ({ id: string, amount: number, type: 'income', date: Date })
+  | ({ id: string, amount: number, category: string, type: 'home', date: Date })
+  | ({ id: string, amount: number, type: 'fuel', date: Date });
