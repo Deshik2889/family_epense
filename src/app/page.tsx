@@ -5,7 +5,7 @@ import {
   getEmis,
 } from '@/lib/actions';
 import { calculateEmiProgress } from '@/lib/helpers';
-import Header from '@/components/layout/header';
+import HeaderClient from '@/components/layout/header-client';
 import StatCards from '@/components/dashboard/stat-cards';
 import { Charts } from '@/components/dashboard/charts';
 import { RecentTransactions } from '@/components/dashboard/recent-transactions';
@@ -51,7 +51,7 @@ export default async function Dashboard() {
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      <Header />
+      <HeaderClient />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
         <StatCards
           totalIncome={totalIncome}
