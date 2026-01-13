@@ -48,7 +48,7 @@ service cloud.firestore {
      * Crucial for preventing modifications to non-existent data.
      */
     function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
+      return isOwner(userId) && exists(path);
     }
 
     /**
@@ -97,8 +97,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, create, write: if isOwner(userId);
       allow list: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow update, delete: if false;
 
       /**
        * @description Rules for a user's income records. Only the owner can perform
@@ -113,7 +112,7 @@ service cloud.firestore {
         allow list: if isOwner(userId);
         allow create: if isOwner(userId) && hasValidIdOnCreate(incomeId);
         allow update: if isExistingOwner(userId) && isIdImmutable();
-        allow delete: if isExistingOwner(userId);
+        allow delete: if isOwner(userId);
       }
 
       /**
@@ -129,7 +128,7 @@ service cloud.firestore {
         allow list: if isOwner(userId);
         allow create: if isOwner(userId) && hasValidIdOnCreate(fuelExpenseId);
         allow update: if isExistingOwner(userId) && isIdImmutable();
-        allow delete: if isExistingOwner(userId);
+        allow delete: if isOwner(userId);
       }
 
       /**
@@ -145,7 +144,7 @@ service cloud.firestore {
         allow list: if isOwner(userId);
         allow create: if isOwner(userId) && hasValidIdOnCreate(homeExpenseId);
         allow update: if isExistingOwner(userId) && isIdImmutable();
-        allow delete: if isExistingOwner(userId);
+        allow delete: if isOwner(userId);
       }
 
       /**
