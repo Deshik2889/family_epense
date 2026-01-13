@@ -90,7 +90,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
                       tx.type === 'income' ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800' : 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800'
                     )}
                   >
-                    {tx.type === 'home' ? 'Home' : tx.type === 'fuel' ? 'Fuel' : 'Income'}
+                    {tx.type === 'home' ? (tx.category === 'EMI' ? 'EMI' : 'Home') : tx.type === 'fuel' ? 'Fuel' : 'Income'}
                   </Badge>
                 </TableCell>
                  <TableCell>

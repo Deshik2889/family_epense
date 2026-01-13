@@ -10,6 +10,7 @@ import {
   Home,
   Landmark,
   Wallet,
+  ArrowDownCircle,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/helpers';
 
@@ -18,6 +19,7 @@ interface StatCardsProps {
   totalFuelExpenses: number;
   totalHomeExpenses: number;
   totalEmiPaid: number;
+  totalExpenses: number;
   netBalance: number;
 }
 
@@ -26,18 +28,20 @@ export default function StatCards({
   totalFuelExpenses,
   totalHomeExpenses,
   totalEmiPaid,
+  totalExpenses,
   netBalance,
 }: StatCardsProps) {
   const stats = [
     { title: 'Total Income', value: totalIncome, icon: DollarSign, color: 'text-green-600' },
     { title: 'Net Balance / Savings', value: netBalance, icon: Wallet, color: netBalance >= 0 ? 'text-blue-600' : 'text-red-600' },
-    { title: 'Home Expenses', value: totalHomeExpenses, icon: Home, color: 'text-red-600' },
-    { title: 'Fuel Expenses', value: totalFuelExpenses, icon: Fuel, color: 'text-orange-600' },
+    { title: 'Total Expenses', value: totalExpenses, icon: ArrowDownCircle, color: 'text-red-600' },
+    { title: 'Home Expenses', value: totalHomeExpenses, icon: Home, color: 'text-orange-600' },
+    { title: 'Fuel Expenses', value: totalFuelExpenses, icon: Fuel, color: 'text-amber-600' },
     { title: 'EMI Paid', value: totalEmiPaid, icon: Landmark, color: 'text-purple-600' },
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-1">
+    <>
       {stats.map((stat) => (
         <Card key={stat.title}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -51,6 +55,6 @@ export default function StatCards({
           </CardContent>
         </Card>
       ))}
-    </div>
+    </>
   );
 }

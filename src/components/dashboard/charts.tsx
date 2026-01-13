@@ -39,16 +39,20 @@ export function Charts({ incomes, homeExpenses, fuelExpenses }: ChartsProps) {
   const monthlyData = useMemo(() => {
     const data: { [key: string]: { month: string; income: number; expense: number } } = {};
 
-    [...incomes, ...homeExpenses, ...fuelExpenses].forEach((item) => {
+    incomes.forEach(item => {
       const monthKey = format(startOfMonth(item.date), 'yyyy-MM');
       if (!data[monthKey]) {
         data[monthKey] = { month: format(startOfMonth(item.date), 'MMM'), income: 0, expense: 0 };
       }
-      if ('category' in item || 'notes' in item) { // It's an expense
-        data[monthKey].expense += item.amount;
-      } else {
-        data[monthKey].income += item.amount;
+      data[monthKey].income += item.amount;
+    });
+
+    [...homeExpenses, ...fuelExpenses].forEach((item) => {
+      const monthKey = format(startOfMonth(item.date), 'yyyy-MM');
+      if (!data[monthKey]) {
+        data[monthKey] = { month: format(startOfMonth(item.date), 'MMM'), income: 0, expense: 0 };
       }
+      data[monthKey].expense += item.amount;
     });
     
     // Sort keys to get the latest months, then take the last 6
@@ -61,7 +65,8 @@ export function Charts({ incomes, homeExpenses, fuelExpenses }: ChartsProps) {
     const data: { name: string; value: number; fill: string }[] = [];
 
     const homeByCategory: { [key: string]: number } = {};
-    homeExpenses.forEach((exp) => {
+    // Exclude 'EMI' from the pie chart breakdown
+    homeExpenses.filter(exp => exp.category !== 'EMI').forEach((exp) => {
       homeByCategory[exp.category] = (homeByCategory[exp.category] || 0) + exp.amount;
     });
 
@@ -72,6 +77,15 @@ export function Charts({ incomes, homeExpenses, fuelExpenses }: ChartsProps) {
     const totalFuel = fuelExpenses.reduce((sum, exp) => sum + exp.amount, 0);
     if(totalFuel > 0) {
         data.push({ name: 'Fuel', value: totalFuel, fill: 'hsl(var(--chart-3))' });
+    }
+
+    // Add EMI payments as their own category
+    const totalEmi = homeExpenses
+        .filter(exp => exp.category === 'EMI')
+        .reduce((sum, exp) => sum + exp.amount, 0);
+    
+    if (totalEmi > 0) {
+        data.push({ name: 'EMI', value: totalEmi, fill: 'hsl(var(--chart-5))' });
     }
 
     return data.sort((a,b) => b.value - a.value);
