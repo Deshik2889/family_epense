@@ -17,7 +17,7 @@ export function EmiCard({ emi }: { emi: Omit<Emi, 'startDate'> & { startDate: Da
   return (
     <Card>
       <CardHeader className="pb-4">
-        <CardTitle>{emi.name}</CardTitle>
+        <CardTitle>{emi.emiName}</CardTitle>
         <CardDescription>{emi.vehicleType}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">

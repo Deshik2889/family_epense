@@ -39,7 +39,7 @@ export function EmiForm({ setOpen }: EmiFormProps) {
   const form = useForm<EmiFormValues>({
     resolver: zodResolver(EmiSchema),
     defaultValues: {
-      name: '',
+      emiName: '',
       vehicleType: '',
       monthlyAmount: 0,
       totalMonths: 0,
@@ -63,7 +63,7 @@ export function EmiForm({ setOpen }: EmiFormProps) {
       
       addDocumentNonBlocking(emisCollectionRef, {
         id: emiId,
-        name: data.name,
+        emiName: data.emiName,
         vehicleType: data.vehicleType,
         monthlyAmount: data.monthlyAmount,
         totalMonths: data.totalMonths,
@@ -90,7 +90,7 @@ export function EmiForm({ setOpen }: EmiFormProps) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
-          name="name"
+          name="emiName"
           render={({ field }) => (
             <FormItem>
               <FormLabel>EMI Name</FormLabel>

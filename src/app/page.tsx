@@ -64,9 +64,12 @@ export default function Dashboard() {
     totalEmiPaid,
     netBalance,
     allTransactions,
+    mappedIncomes,
+    mappedHomeExpenses,
+    mappedFuelExpenses,
   } = useMemo(() => {
     if (!incomes || !fuelExpenses || !homeExpenses || !emis || !recentIncomes || !recentHomeExpenses || !recentFuelExpenses) {
-      return { totalIncome: 0, totalFuelExpenses: 0, totalHomeExpenses: 0, totalEmiPaid: 0, netBalance: 0, allTransactions: [] };
+      return { totalIncome: 0, totalFuelExpenses: 0, totalHomeExpenses: 0, totalEmiPaid: 0, netBalance: 0, allTransactions: [], mappedIncomes: [], mappedHomeExpenses: [], mappedFuelExpenses: [] };
     }
 
     const totalIncome = incomes.reduce((sum, item) => sum + item.amount, 0);
@@ -134,9 +137,9 @@ export default function Dashboard() {
                 <>
                 <div className="grid grid-cols-1 gap-4 lg:gap-8">
                     <Charts
-                        incomes={(incomes?.map(i => ({...i, date: i.date.toDate()})) || []) as Income[]}
-                        homeExpenses={(homeExpenses?.map(h => ({...h, date: h.date.toDate()})) || []) as HomeExpense[]}
-                        fuelExpenses={(fuelExpenses?.map(f => ({...f, date: f.date.toDate()})) || []) as FuelExpense[]}
+                        incomes={mappedIncomes}
+                        homeExpenses={mappedHomeExpenses}
+                        fuelExpenses={mappedFuelExpenses}
                     />
                 </div>
                 <div>

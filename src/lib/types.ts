@@ -18,7 +18,7 @@ export const ExpenseSchema = z.object({
 });
 
 export const EmiSchema = z.object({
-  name: z.string().min(1, 'EMI name is required'),
+  emiName: z.string().min(1, 'EMI name is required'),
   vehicleType: z.string().min(1, 'Vehicle type is required'),
   monthlyAmount: z.number().positive('Amount must be positive'),
   totalMonths: z.number().int().positive('Must be a positive number of months'),
@@ -50,7 +50,7 @@ export interface HomeExpense extends Omit<BaseDoc, 'date'> {
 // Type for EMI data
 export interface Emi {
   id: string;
-  name: string;
+  emiName: string;
   vehicleType: string;
   monthlyAmount: number;
   totalMonths: number;
