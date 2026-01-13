@@ -1,5 +1,4 @@
 'use client';
-import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -27,13 +26,21 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
 import type { Transaction } from '@/lib/types';
 import type { TransactionFilter } from '@/app/page';
 import { formatCurrency } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
-import { Trash2, Calendar as CalendarIcon, FilterX } from 'lucide-react';
+import { Trash2, Calendar as CalendarIcon, Filter, ListFilter } from 'lucide-react';
 import { useFirestore, deleteDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -78,6 +85,8 @@ export function RecentTransactions({ transactions, activeFilter, setFilter, date
     return 'Transaction';
   };
 
+  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
   return (
     <Card>
       <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -86,17 +95,23 @@ export function RecentTransactions({ transactions, activeFilter, setFilter, date
           <CardDescription>A list of your most recent income and expenses.</CardDescription>
         </div>
         <div className="flex items-center gap-2 mt-4 md:mt-0">
-          {activeFilter !== 'all' && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setFilter('all')}
-              className="h-8 gap-1"
-            >
-              <FilterX className="h-3.5 w-3.5" />
-              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Clear Filter</span>
-            </Button>
-          )}
+           <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 gap-1">
+                <ListFilter className="h-3.5 w-3.5" />
+                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Filter</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Filter by type</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuCheckboxItem checked={activeFilter === 'all'} onCheckedChange={() => setFilter('all')}>All</DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={activeFilter === 'income'} onCheckedChange={() => setFilter('income')}>Income</DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={activeFilter === 'home'} onCheckedChange={() => setFilter('home')}>Home Expense</DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={activeFilter === 'fuel'} onCheckedChange={() => setFilter('fuel')}>Fuel Expense</DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={activeFilter === 'emi'} onCheckedChange={() => setFilter('emi')}>EMI</DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Popover>
             <PopoverTrigger asChild>
               <Button
