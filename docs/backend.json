@@ -18,12 +18,17 @@
         "amount": {
           "type": "number",
           "description": "The amount of income received."
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the income (Nellore, Amalapuram, Pedhapuram, Local, Other)."
         }
       },
       "required": [
         "id",
         "date",
-        "amount"
+        "amount",
+        "category"
       ]
     },
     "FuelExpense": {

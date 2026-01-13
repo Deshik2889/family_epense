@@ -1,11 +1,14 @@
 import { z } from 'zod';
-import { HOME_EXPENSE_CATEGORIES } from './constants';
+import { HOME_EXPENSE_CATEGORIES, INCOME_CATEGORIES } from './constants';
 import { Timestamp } from 'firebase/firestore';
 
 // Schemas for form validation
 export const IncomeSchema = z.object({
   amount: z.number().positive('Amount must be positive'),
   date: z.date(),
+  category: z.enum(INCOME_CATEGORIES, {
+    errorMap: () => ({ message: "Please select a category." }),
+  }),
 });
 
 export const ExpenseSchema = z.object({
@@ -35,6 +38,7 @@ export interface BaseDoc {
 // Specific data types that extend the base
 export interface Income extends Omit<BaseDoc, 'date'> {
   date: Timestamp;
+  category: typeof INCOME_CATEGORIES[number];
 }
 
 export interface FuelExpense extends Omit<BaseDoc, 'date'> {
@@ -60,6 +64,6 @@ export interface Emi {
 // A union type for transactions that can be displayed in a list.
 // The 'date' here is a JS Date object, converted from a Timestamp for display.
 export type Transaction = 
-  | ({ id: string, amount: number, type: 'income', date: Date })
+  | ({ id: string, amount: number, type: 'income', date: Date, category: string })
   | ({ id: string, amount: number, category: string, type: 'home', date: Date })
   | ({ id: string, amount: number, type: 'fuel', date: Date });

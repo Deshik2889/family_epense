@@ -23,6 +23,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { Timestamp, doc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { INCOME_CATEGORIES } from '@/lib/constants';
 
 
 type IncomeFormValues = z.infer<typeof IncomeSchema>;
@@ -52,6 +54,7 @@ export function IncomeForm({ setOpen }: IncomeFormProps) {
         id: incomeId,
         amount: data.amount,
         date: Timestamp.fromDate(data.date),
+        category: data.category,
       };
 
       setDocumentNonBlocking(incomeDocRef, payload, { merge: true });
@@ -80,6 +83,28 @@ export function IncomeForm({ setOpen }: IncomeFormProps) {
               <FormControl>
                 <Input type="number" placeholder="0.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an income category" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {INCOME_CATEGORIES.map(category => (
+                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

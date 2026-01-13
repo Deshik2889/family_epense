@@ -94,8 +94,8 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
                   </Badge>
                 </TableCell>
                  <TableCell>
-                  {tx.type === 'home' && tx.category}
-                  {tx.type !== 'home' && <span className="text-muted-foreground">-</span>}
+                  {(tx.type === 'home' || tx.type === 'income') && tx.category}
+                  {tx.type === 'fuel' && <span className="text-muted-foreground">-</span>}
                 </TableCell>
                 <TableCell className={`text-right font-medium ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                   {tx.type === 'income' ? '+' : '-'} {formatCurrency(tx.amount)}
