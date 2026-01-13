@@ -39,8 +39,8 @@ export function EmiForm({ setOpen }: EmiFormProps) {
     defaultValues: {
       emiName: '',
       vehicleType: '',
-      monthlyEmiAmount: undefined,
-      totalMonths: undefined,
+      monthlyEmiAmount: '' as any,
+      totalMonths: '' as any,
       startDate: new Date(),
     },
   });
@@ -118,7 +118,7 @@ export function EmiForm({ setOpen }: EmiFormProps) {
                 <FormItem>
                 <FormLabel>Monthly Amount</FormLabel>
                 <FormControl>
-                    <Input type="number" placeholder="3000" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                    <Input type="number" placeholder="3000" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />
                 </FormControl>
                 <FormMessage />
                 </FormItem>
@@ -131,7 +131,7 @@ export function EmiForm({ setOpen }: EmiFormProps) {
                 <FormItem>
                 <FormLabel>Total Months</FormLabel>
                 <FormControl>
-                    <Input type="number" placeholder="24" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} />
+                    <Input type="number" placeholder="24" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseInt(e.target.value, 10))} />
                 </FormControl>
                 <FormMessage />
                 </FormItem>

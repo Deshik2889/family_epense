@@ -2,9 +2,15 @@ import { z } from 'zod';
 import { HOME_EXPENSE_CATEGORIES, INCOME_CATEGORIES } from './constants';
 import { Timestamp } from 'firebase/firestore';
 
+const numberOrEmptyString = z.union([
+    z.number().positive('Amount must be positive'),
+    z.string().length(0),
+  ]).refine(val => val !== '', { message: "Amount is required." });
+
+
 // Schemas for form validation
 export const IncomeSchema = z.object({
-  amount: z.number({required_error: "Amount is required."}).positive('Amount must be positive'),
+  amount: numberOrEmptyString,
   date: z.date(),
   category: z.enum(INCOME_CATEGORIES, {
     errorMap: () => ({ message: "Please select a category." }),
@@ -12,7 +18,7 @@ export const IncomeSchema = z.object({
 });
 
 export const ExpenseSchema = z.object({
-  amount: z.number({required_error: "Amount is required."}).positive('Amount must be positive'),
+  amount: numberOrEmptyString,
   date: z.date(),
   category: z.enum(HOME_EXPENSE_CATEGORIES, {
     errorMap: () => ({ message: "Please select a category." }),
@@ -25,8 +31,8 @@ export const ExpenseSchema = z.object({
 export const EmiSchema = z.object({
   emiName: z.string().min(1, 'EMI name is required'),
   vehicleType: z.string().min(1, 'Vehicle type is required'),
-  monthlyEmiAmount: z.number({required_error: "Amount is required."}).positive('Amount must be positive'),
-  totalMonths: z.number({required_error: "Total months is required."}).int().positive('Must be a positive number of months'),
+  monthlyEmiAmount: numberOrEmptyString,
+  totalMonths: numberOrEmptyString.refine(val => typeof val === 'number' && Number.isInteger(val), { message: "Must be a whole number." }),
   startDate: z.date(),
 });
 

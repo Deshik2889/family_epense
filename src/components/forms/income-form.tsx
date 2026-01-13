@@ -40,7 +40,7 @@ export function IncomeForm({ setOpen }: IncomeFormProps) {
   const form = useForm<IncomeFormValues>({
     resolver: zodResolver(IncomeSchema),
     defaultValues: {
-      amount: undefined,
+      amount: '' as any,
       date: new Date(),
     },
   });
@@ -88,7 +88,7 @@ export function IncomeForm({ setOpen }: IncomeFormProps) {
             <FormItem>
               <FormLabel>Amount Received</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="0.00" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                <Input type="number" placeholder="0.00" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />
               </FormControl>
               <FormMessage />
             </FormItem>

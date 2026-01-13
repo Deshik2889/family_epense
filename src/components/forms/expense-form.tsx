@@ -53,7 +53,7 @@ export function ExpenseForm({ setOpen }: ExpenseFormProps) {
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      amount: undefined,
+      amount: '' as any,
       date: new Date(),
       expenseType: 'home',
     },
@@ -162,7 +162,7 @@ export function ExpenseForm({ setOpen }: ExpenseFormProps) {
                 <FormItem>
                 <FormLabel>Amount</FormLabel>
                 <FormControl>
-                    <Input type="number" placeholder="0.00" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                    <Input type="number" placeholder="0.00" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />
                 </FormControl>
                 <FormMessage />
                 </FormItem>
