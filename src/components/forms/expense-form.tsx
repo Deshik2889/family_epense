@@ -1,5 +1,5 @@
 'use client';
-
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -24,9 +24,10 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { HOME_EXPENSE_CATEGORIES } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, setDocumentNonBlocking } from '@/firebase';
-import { Timestamp, doc } from 'firebase/firestore';
+import { useFirestore, useCollection, setDocumentNonBlocking, updateDocumentNonBlocking, useMemoFirebase } from '@/firebase';
+import { Timestamp, doc, arrayUnion, collection } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
+import type { Emi } from '@/lib/types';
 
 const FormSchema = ExpenseSchema.extend({
   expenseType: z.enum(['fuel', 'home'], {
@@ -42,6 +43,9 @@ interface ExpenseFormProps {
 export function ExpenseForm({ setOpen }: ExpenseFormProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
+
+  const emisRef = useMemoFirebase(() => collection(firestore, `emis`), [firestore]);
+  const { data: emis } = useCollection<Emi>(emisRef);
   
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(FormSchema),
@@ -53,6 +57,14 @@ export function ExpenseForm({ setOpen }: ExpenseFormProps) {
   });
   
   const expenseType = form.watch('expenseType');
+  const expenseCategory = form.watch('category');
+
+  // When category changes, if it's not EMI, clear the emiId
+  useEffect(() => {
+    if (expenseCategory !== 'EMI') {
+      form.setValue('emiId', undefined);
+    }
+  }, [expenseCategory, form]);
 
   async function onSubmit(data: ExpenseFormValues) {
     try {
@@ -70,9 +82,21 @@ export function ExpenseForm({ setOpen }: ExpenseFormProps) {
             docRef = doc(firestore, `home_expenses/${expenseId}`);
             payload.category = data.category;
             payload.notes = data.notes || '';
+            if (data.category === 'EMI' && data.emiId) {
+                payload.emiId = data.emiId;
+            }
         }
         
         setDocumentNonBlocking(docRef, payload, { merge: true });
+
+        // If it's an EMI payment, also update the EMI document
+        if (data.category === 'EMI' && data.emiId) {
+            const emiDocRef = doc(firestore, `emis/${data.emiId}`);
+            const monthStr = format(data.date, 'yyyy-MM');
+            updateDocumentNonBlocking(emiDocRef, {
+                paidMonths: arrayUnion(monthStr)
+            });
+        }
 
         toast({ title: 'Success', description: 'Expense added successfully.' });
         setOpen(false);
@@ -187,6 +211,32 @@ export function ExpenseForm({ setOpen }: ExpenseFormProps) {
                 </FormItem>
               )}
             />
+            
+            {expenseCategory === 'EMI' && (
+               <FormField
+                control={form.control}
+                name="emiId"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Which EMI?</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select the EMI that was paid" />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        {emis?.map(emi => (
+                            <SelectItem key={emi.id} value={emi.id}>{emi.emiName}</SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            )}
+
             <FormField
               control={form.control}
               name="notes"

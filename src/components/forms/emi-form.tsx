@@ -57,6 +57,7 @@ export function EmiForm({ setOpen }: EmiFormProps) {
         monthlyEmiAmount: data.monthlyEmiAmount,
         totalMonths: data.totalMonths,
         startDate: Timestamp.fromDate(data.startDate),
+        paidMonths: [], // Initialize with empty paid months
       };
 
       setDocumentNonBlocking(emiDocRef, payload, { merge: true });

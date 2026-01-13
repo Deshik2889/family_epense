@@ -83,6 +83,10 @@
         "notes": {
           "type": "string",
           "description": "Optional notes about the expense."
+        },
+        "emiId": {
+          "type": "string",
+          "description": "If the expense is an EMI payment, this links to the EMI record."
         }
       },
       "required": [
@@ -122,6 +126,13 @@
           "type": "string",
           "description": "The start date of the EMI.",
           "format": "date-time"
+        },
+        "paidMonths": {
+          "type": "array",
+          "description": "An array of strings representing the months paid, in 'YYYY-MM' format.",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
@@ -130,7 +141,8 @@
         "vehicleType",
         "monthlyEmiAmount",
         "totalMonths",
-        "startDate"
+        "startDate",
+        "paidMonths"
       ]
     }
   },

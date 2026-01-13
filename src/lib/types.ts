@@ -18,7 +18,9 @@ export const ExpenseSchema = z.object({
     errorMap: () => ({ message: "Please select a category." }),
   }).optional(),
   notes: z.string().optional(),
+  emiId: z.string().optional(), // To link an expense to an EMI
 });
+
 
 export const EmiSchema = z.object({
   emiName: z.string().min(1, 'EMI name is required'),
@@ -49,6 +51,7 @@ export interface HomeExpense extends Omit<BaseDoc, 'date'> {
   date: Timestamp;
   category: typeof HOME_EXPENSE_CATEGORIES[number];
   notes?: string;
+  emiId?: string;
 }
 
 // Type for EMI data
@@ -59,6 +62,7 @@ export interface Emi {
   monthlyEmiAmount: number;
   totalMonths: number;
   startDate: Timestamp; // Using Firestore Timestamp
+  paidMonths: string[]; // e.g., ["2024-07", "2024-08"]
 }
 
 // A union type for transactions that can be displayed in a list.

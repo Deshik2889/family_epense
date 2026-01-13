@@ -10,6 +10,7 @@ export const HOME_EXPENSE_CATEGORIES = [
   "Healthcare",
   "Education",
   "Clothing",
+  "EMI",
   "Other",
 ] as const;
 
