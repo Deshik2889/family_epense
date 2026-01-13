@@ -17,7 +17,7 @@ import type {
 } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DateRange } from 'react-day-picker';
-import { subDays } from 'date-fns';
+import { subDays, startOfDay, endOfDay } from 'date-fns';
 
 export type TransactionFilter = 'all' | 'income' | 'home' | 'fuel' | 'emi';
 
@@ -68,22 +68,36 @@ export default function Dashboard() {
     if (!incomes || !fuelExpenses || !homeExpenses || !emis) {
       return defaultResult;
     }
-
-    const totalIncome = incomes.reduce((sum, item) => sum + item.amount, 0);
-    const totalFuelExpenses = fuelExpenses.reduce((sum, item) => sum + item.amount, 0);
     
-    const nonEmiHomeExpenses = homeExpenses.filter(exp => exp.category !== 'EMI');
+    const from = dateRange?.from ? startOfDay(dateRange.from) : null;
+    const to = dateRange?.to ? endOfDay(dateRange.to) : null;
+
+    const inDateRange = (date: Date) => {
+        if (from && to) return date >= from && date <= to;
+        if (from) return date >= from;
+        if (to) return date <= to;
+        return true; // No date range selected, include everything
+    };
+
+    const mappedIncomes = incomes.map(i => ({...i, date: i.date.toDate()}));
+    const mappedHomeExpenses = homeExpenses.map(h => ({...h, date: h.date.toDate()}));
+    const mappedFuelExpenses = fuelExpenses.map(f => ({...f, date: f.date.toDate()}));
+    
+    const filteredIncomes = mappedIncomes.filter(i => inDateRange(i.date));
+    const filteredFuelExpenses = mappedFuelExpenses.filter(f => inDateRange(f.date));
+    const filteredHomeExpenses = mappedHomeExpenses.filter(h => inDateRange(h.date));
+
+    const totalIncome = filteredIncomes.reduce((sum, item) => sum + item.amount, 0);
+    const totalFuelExpenses = filteredFuelExpenses.reduce((sum, item) => sum + item.amount, 0);
+    
+    const nonEmiHomeExpenses = filteredHomeExpenses.filter(exp => exp.category !== 'EMI');
     const totalHomeExpenses = nonEmiHomeExpenses.reduce((sum, item) => sum + item.amount, 0);
     
-    const emiPayments = homeExpenses.filter(exp => exp.category === 'EMI');
+    const emiPayments = filteredHomeExpenses.filter(exp => exp.category === 'EMI');
     const totalEmiPaid = emiPayments.reduce((sum, item) => sum + item.amount, 0);
     
     const totalExpenses = totalHomeExpenses + totalFuelExpenses + totalEmiPaid;
     const netBalance = totalIncome - totalExpenses;
-    
-    const mappedIncomes = incomes.map(i => ({...i, date: i.date.toDate()}));
-    const mappedHomeExpenses = homeExpenses.map(h => ({...h, date: h.date.toDate()}));
-    const mappedFuelExpenses = fuelExpenses.map(f => ({...f, date: f.date.toDate()}));
 
     let combinedTransactions: Transaction[] = [
       ...mappedIncomes.map((i) => ({ ...i, type: 'income' as const })),
@@ -93,18 +107,7 @@ export default function Dashboard() {
 
     let filteredTransactions = combinedTransactions.filter(tx => {
        const txDate = tx.date;
-       const from = dateRange?.from;
-       const to = dateRange?.to;
-       let inDateRange = true;
-       if (from && to) {
-            inDateRange = txDate >= from && txDate <= to;
-       } else if (from) {
-            inDateRange = txDate >= from;
-       } else if (to) {
-            inDateRange = txDate <= to;
-       }
-
-      if (!inDateRange) return false;
+       if (!inDateRange(txDate)) return false;
 
       if (filter === 'all') return true;
       if (filter === 'home') return tx.type === 'home'; // Excludes EMI
@@ -121,9 +124,9 @@ export default function Dashboard() {
       totalExpenses,
       netBalance,
       allTransactions,
-      mappedIncomes,
-      mappedHomeExpenses,
-      mappedFuelExpenses
+      mappedIncomes: incomes.map(i => ({...i, date: i.date.toDate()})),
+      mappedHomeExpenses: homeExpenses.map(h => ({...h, date: h.date.toDate()})),
+      mappedFuelExpenses: fuelExpenses.map(f => ({...f, date: f.date.toDate()}))
     };
 
   }, [incomes, fuelExpenses, homeExpenses, emis, filter, dateRange]);
