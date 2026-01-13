@@ -63,9 +63,25 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 }) => {
   const [userAuthState, setUserAuthState] = useState<UserAuthState>({
     user: null,
-    isUserLoading: false, 
+    isUserLoading: true, 
     userError: null,
   });
+
+  useEffect(() => {
+    // onAuthStateChanged is the ideal way to manage user state.
+    // It handles the initial check and subsequent changes automatically.
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => {
+        setUserAuthState({ user, isUserLoading: false, userError: null });
+      },
+      (error) => {
+        setUserAuthState({ user: null, isUserLoading: false, userError: error });
+      }
+    );
+
+    return () => unsubscribe(); // Cleanup on unmount
+  }, [auth]); // Rerun only if the auth service instance changes
 
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
