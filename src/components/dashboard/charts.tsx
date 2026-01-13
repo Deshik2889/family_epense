@@ -44,7 +44,7 @@ export function Charts({ incomes, homeExpenses, fuelExpenses }: ChartsProps) {
       if (!data[monthKey]) {
         data[monthKey] = { month: format(startOfMonth(item.date), 'MMM'), income: 0, expense: 0 };
       }
-      if ('category' in item || item.hasOwnProperty('notes')) { // It's an expense
+      if ('category' in item || 'notes' in item) { // It's an expense
         data[monthKey].expense += item.amount;
       } else {
         data[monthKey].income += item.amount;
@@ -93,7 +93,7 @@ export function Charts({ incomes, homeExpenses, fuelExpenses }: ChartsProps) {
 
   return (
     <>
-      <Card className="lg:col-span-4">
+      <Card>
         <CardHeader>
           <CardTitle>Monthly Summary</CardTitle>
           <CardDescription>Income vs. Expenses for the last 6 months.</CardDescription>
@@ -124,7 +124,7 @@ export function Charts({ incomes, homeExpenses, fuelExpenses }: ChartsProps) {
         </CardContent>
       </Card>
 
-      <Card className="lg:col-span-3">
+      <Card>
         <CardHeader>
           <CardTitle>Expense Breakdown</CardTitle>
           <CardDescription>A look at where the money goes.</CardDescription>

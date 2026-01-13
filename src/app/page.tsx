@@ -50,12 +50,12 @@ export default function Dashboard() {
   const { data: homeExpenses, isLoading: homeLoading } = useCollection<HomeExpense>(homeExpensesRef);
   const { data: emis, isLoading: emisLoading } = useCollection<Emi>(emisRef);
 
-  const { data: recentIncomes } = useCollection<Income>(recentIncomesQuery);
-  const { data: recentHomeExpenses } = useCollection<HomeExpense>(recentHomeExpensesQuery);
-  const { data: recentFuelExpenses } = useCollection<FuelExpense>(recentFuelExpensesQuery);
+  const { data: recentIncomes, isLoading: recentIncomesLoading } = useCollection<Income>(recentIncomesQuery);
+  const { data: recentHomeExpenses, isLoading: recentHomeExpensesLoading } = useCollection<HomeExpense>(recentHomeExpensesQuery);
+  const { data: recentFuelExpenses, isLoading: recentFuelExpensesLoading } = useCollection<FuelExpense>(recentFuelExpensesQuery);
 
 
-  const isLoading = isUserLoading || incomesLoading || fuelLoading || homeLoading || emisLoading;
+  const isLoading = isUserLoading || incomesLoading || fuelLoading || homeLoading || emisLoading || recentIncomesLoading || recentHomeExpensesLoading || recentFuelExpensesLoading;
 
   const {
     totalIncome,
@@ -74,7 +74,8 @@ export default function Dashboard() {
     const totalHomeExpenses = homeExpenses.reduce((sum, item) => sum + item.amount, 0);
 
     const totalEmiPaid = emis.reduce((sum, emi) => {
-      const progress = calculateEmiProgress(emi);
+      const emiWithDate = { ...emi, startDate: emi.startDate.toDate() };
+      const progress = calculateEmiProgress(emiWithDate);
       return sum + progress.totalPaid;
     }, 0);
 
@@ -110,7 +111,7 @@ export default function Dashboard() {
       <HeaderClient />
       <main className="flex flex-1 flex-col gap-4 p-4 sm:p-6">
         {isLoading ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="grid grid-cols-1 gap-4">
               {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-[108px] w-full" />)}
             </div>
         ) : (
@@ -122,23 +123,23 @@ export default function Dashboard() {
             netBalance={netBalance}
             />
         )}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-7 lg:gap-8">
+        <div className="grid grid-cols-1 gap-4 lg:gap-8">
             {isLoading ? (
                 <>
-                    <Skeleton className="lg:col-span-4 h-[350px]" />
-                    <Skeleton className="lg:col-span-3 h-[350px]" />
-                    <Skeleton className="lg:col-span-7 h-[400px]" />
+                    <Skeleton className="h-[350px] w-full" />
+                    <Skeleton className="h-[350px] w-full" />
+                    <Skeleton className="h-[400px] w-full" />
                 </>
             ): (
                 <>
-                <div className="lg:col-span-7 grid grid-cols-1 gap-4 lg:grid-cols-7 lg:gap-8">
+                <div className="grid grid-cols-1 gap-4 lg:gap-8">
                     <Charts
                         incomes={(incomes?.map(i => ({...i, date: i.date.toDate()})) || []) as Income[]}
                         homeExpenses={(homeExpenses?.map(h => ({...h, date: h.date.toDate()})) || []) as HomeExpense[]}
                         fuelExpenses={(fuelExpenses?.map(f => ({...f, date: f.date.toDate()})) || []) as FuelExpense[]}
                     />
                 </div>
-                <div className="lg:col-span-7">
+                <div>
                     <RecentTransactions
                         transactions={allTransactions.slice(0, 10)}
                     />

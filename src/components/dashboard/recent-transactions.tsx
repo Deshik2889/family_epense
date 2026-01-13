@@ -17,6 +17,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import type { Transaction } from '@/lib/types';
 import { formatCurrency } from '@/lib/helpers';
+import { cn } from '@/lib/utils';
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
@@ -24,7 +25,7 @@ interface RecentTransactionsProps {
 
 export function RecentTransactions({ transactions }: RecentTransactionsProps) {
   return (
-    <Card className="lg:col-span-7">
+    <Card>
       <CardHeader>
         <CardTitle>Recent Transactions</CardTitle>
         <CardDescription>A list of your most recent income and expenses.</CardDescription>
@@ -48,7 +49,9 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
                 <TableCell>
                   <Badge 
                     variant={tx.type === 'income' ? 'default' : 'secondary'}
-                    className={tx.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
+                     className={cn(
+                      tx.type === 'income' ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800' : 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800'
+                    )}
                   >
                     {tx.type === 'home' ? 'Home' : tx.type === 'fuel' ? 'Fuel' : 'Income'}
                   </Badge>

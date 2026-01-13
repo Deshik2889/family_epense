@@ -24,7 +24,7 @@ export default function EmisPage() {
     // Firestore doesn't guarantee order without an orderBy clause, so we sort client-side.
     // Also convert timestamp to date for calculation
     return [...emis]
-      .map(emi => ({ ...emi, startDate: emi.startDate.toDate() }))
+      .map(emi => ({ ...emi, startDate: emi.startDate.toDate(), name: emi.name || "Unnamed EMI" }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [emis]);
 
@@ -32,7 +32,7 @@ export default function EmisPage() {
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <PageHeader title="EMI Management" showAddEmi />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
-        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4">
           {isLoading && Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-64 w-full" />)}
           
           {!isLoading && sortedEmis && sortedEmis.map(emi => (
