@@ -6,7 +6,7 @@ import type { Emi } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,14 +18,25 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { useFirestore, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase";
 import { doc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { useState } from "react";
+import { EmiForm } from "../forms/emi-form";
 
 export function EmiCard({ emi }: { emi: Omit<Emi, 'startDate'> & { startDate: Date } }) {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   
   const { 
     paidMonthsCount, 
@@ -68,26 +79,44 @@ export function EmiCard({ emi }: { emi: Omit<Emi, 'startDate'> & { startDate: Da
           <CardTitle>{emi.emiName}</CardTitle>
           <CardDescription>{emi.vehicleType}</CardDescription>
         </div>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-              <Trash2 className="h-4 w-4 text-muted-foreground" />
-              <span className="sr-only">Delete EMI</span>
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the EMI record for {emi.emiName}.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <div className="flex items-center gap-1">
+          <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                <Pencil className="h-4 w-4 text-muted-foreground" />
+                <span className="sr-only">Edit EMI</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit EMI</DialogTitle>
+                <DialogDescription>Update the details for your vehicle loan.</DialogDescription>
+              </DialogHeader>
+              <EmiForm setOpen={setEditDialogOpen} emiToEdit={emi} />
+            </DialogContent>
+          </Dialog>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                <Trash2 className="h-4 w-4 text-muted-foreground" />
+                <span className="sr-only">Delete EMI</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the EMI record for {emi.emiName}.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="flex items-center justify-between">

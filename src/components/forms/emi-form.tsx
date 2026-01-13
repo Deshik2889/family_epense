@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { EmiSchema } from '@/lib/types';
+import { EmiSchema, type Emi } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -25,24 +25,31 @@ import { Timestamp, doc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 
 type EmiFormValues = z.infer<typeof EmiSchema>;
+type EmiWithDate = Omit<Emi, 'startDate'> & { startDate: Date };
 
 interface EmiFormProps {
   setOpen: (open: boolean) => void;
+  emiToEdit?: EmiWithDate;
 }
 
-export function EmiForm({ setOpen }: EmiFormProps) {
+export function EmiForm({ setOpen, emiToEdit }: EmiFormProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const isEditMode = !!emiToEdit;
 
   const form = useForm<EmiFormValues>({
     resolver: zodResolver(EmiSchema),
-    defaultValues: {
-      emiName: '',
-      vehicleType: '',
-      monthlyEmiAmount: '' as any,
-      totalMonths: '' as any,
-      startDate: new Date(),
-    },
+    defaultValues: isEditMode
+      ? {
+          ...emiToEdit,
+        }
+      : {
+          emiName: '',
+          vehicleType: '',
+          monthlyEmiAmount: '',
+          totalMonths: '',
+          startDate: new Date(),
+        },
   });
 
   async function onSubmit(data: EmiFormValues) {
@@ -55,7 +62,7 @@ export function EmiForm({ setOpen }: EmiFormProps) {
         return;
     }
     try {
-      const emiId = uuidv4();
+      const emiId = isEditMode ? emiToEdit.id : uuidv4();
       const emiDocRef = doc(firestore, `emis/${emiId}`);
       
       const payload = {
@@ -65,18 +72,18 @@ export function EmiForm({ setOpen }: EmiFormProps) {
         monthlyEmiAmount: data.monthlyEmiAmount,
         totalMonths: data.totalMonths,
         startDate: Timestamp.fromDate(data.startDate),
-        paidMonths: [], // Initialize with empty paid months
+        paidMonths: isEditMode ? emiToEdit.paidMonths : [],
       };
 
       setDocumentNonBlocking(emiDocRef, payload, { merge: true });
 
-      toast({ title: 'Success', description: 'EMI added successfully.' });
+      toast({ title: 'Success', description: `EMI ${isEditMode ? 'updated' : 'added'} successfully.` });
       setOpen(false);
     } catch (error) {
        toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Something went wrong while adding the EMI.',
+        description: 'Something went wrong while saving the EMI.',
       });
     }
   }
@@ -118,7 +125,7 @@ export function EmiForm({ setOpen }: EmiFormProps) {
                 <FormItem>
                 <FormLabel>Monthly Amount</FormLabel>
                 <FormControl>
-                    <Input type="number" placeholder="3000" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />
+                    <Input type="number" placeholder="3000" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />
                 </FormControl>
                 <FormMessage />
                 </FormItem>
@@ -131,7 +138,7 @@ export function EmiForm({ setOpen }: EmiFormProps) {
                 <FormItem>
                 <FormLabel>Total Months</FormLabel>
                 <FormControl>
-                    <Input type="number" placeholder="24" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseInt(e.target.value, 10))} />
+                    <Input type="number" placeholder="24" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? '' : parseInt(e.target.value, 10))} />
                 </FormControl>
                 <FormMessage />
                 </FormItem>
@@ -176,7 +183,7 @@ export function EmiForm({ setOpen }: EmiFormProps) {
         
         <div className="flex justify-end pt-4">
           <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Saving..." : "Save EMI"}
+            {form.formState.isSubmitting ? "Saving..." : isEditMode ? "Save Changes" : "Save EMI"}
           </Button>
         </div>
       </form>
