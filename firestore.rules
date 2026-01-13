@@ -1,0 +1,185 @@
+/**
+ * Core Philosophy: This ruleset enforces a strict user-ownership model for a
+ * personal finance tracking application. All data is considered private and is
+ * segregated into a per-user data tree.
+ *
+ * Data Structure: The entire data model is hierarchical, starting with a top-level
+ * 'users' collection. All financial records, including incomes, expenses, and EMIs,
+ * are stored in subcollections under the path /users/{userId}. This structure ensures
+ * that all data is inherently tied to a specific user account.
+ *
+ * Key Security Decisions:
+ * - Strict Data Isolation: Users can only access documents within their own
+ *   data tree (/users/{their_own_userId}). Cross-user access is completely denied.
+ * - No Public Data: There are no publicly readable collections. A user must be
+ *   authenticated to access any data.
+ * - Path-Based Security: Authorization is primarily based on matching the
+ *   'userId' from the document path with the authenticated user's UID. This
+ *   avoids costly and complex lookups to other documents for authorization checks.
+ * - Subcollection Inheritance: Access to nested subcollections (like emi_payments)
+ *   is granted based on ownership of the top-level user document, ensuring consistent
+ *   security throughout the data tree.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------------------
+    // Helper Functions
+    // ------------------------------------------------------------------------
+
+    /**
+     * Checks if a user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user is the owner of the document
+     * based on the userId provided in the path.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks for ownership and ensures the document already exists.
+     * Crucial for preventing modifications to non-existent data.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * On create, validates that the document's internal 'id' field matches
+     * the document ID from the path, ensuring data consistency.
+     */
+    function hasValidIdOnCreate(docId) {
+      return request.resource.data.id == docId;
+    }
+
+    /**
+     * On update, ensures the document's internal 'id' field is immutable.
+     */
+    function isIdImmutable() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    /**
+     * On create, validates EmiPayment's relational integrity with its parent Emi.
+     */
+    function hasValidEmiPaymentDataOnCreate(emiId, emiPaymentId) {
+      return request.resource.data.id == emiPaymentId
+          && request.resource.data.emiId == emiId;
+    }
+
+    /**
+     * On update, ensures an EmiPayment's relational links are immutable.
+     */
+    function areEmiPaymentLinksImmutable() {
+      return request.resource.data.id == resource.data.id
+          && request.resource.data.emiId == resource.data.emiId;
+    }
+
+    // ------------------------------------------------------------------------
+    // User Data Tree
+    // ------------------------------------------------------------------------
+
+    /**
+     * @description Rules for a user's top-level document. Allows a user to create
+     * their own user document and read it, but not modify or delete it.
+     * @path /users/{userId}
+     * @allow (get) An authenticated user reads their own document at /users/user_abc.
+     * @deny (update) An authenticated user tries to change their document at /users/user_abc.
+     * @principle Establishes a user's root data container while preventing destructive actions.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if false;
+      allow delete: if false;
+
+      /**
+       * @description Rules for a user's income records. Only the owner can perform
+       * any read or write operations on their own records.
+       * @path /users/{userId}/incomes/{incomeId}
+       * @allow (create) User 'user_abc' creates a new income record at /users/user_abc/incomes/new_income.
+       * @deny (get) User 'user_xyz' tries to read a record at /users/user_abc/incomes/some_income.
+       * @principle Enforces strict data ownership for all personal financial records.
+       */
+      match /incomes/{incomeId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && hasValidIdOnCreate(incomeId);
+        allow update: if isExistingOwner(userId) && isIdImmutable();
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Rules for a user's fuel expense records. Only the owner can perform
+       * any read or write operations on their own records.
+       * @path /users/{userId}/fuel_expenses/{fuelExpenseId}
+       * @allow (list) User 'user_abc' lists all their fuel expenses at /users/user_abc/fuel_expenses.
+       * @deny (delete) User 'user_xyz' tries to delete a record at /users/user_abc/fuel_expenses/some_expense.
+       * @principle Enforces strict data ownership for all personal financial records.
+       */
+      match /fuel_expenses/{fuelExpenseId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && hasValidIdOnCreate(fuelExpenseId);
+        allow update: if isExistingOwner(userId) && isIdImmutable();
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Rules for a user's home expense records. Only the owner can perform
+       * any read or write operations on their own records.
+       * @path /users/{userId}/home_expenses/{homeExpenseId}
+       * @allow (update) User 'user_abc' updates their own expense at /users/user_abc/home_expenses/some_expense.
+       * @deny (list) User 'user_xyz' tries to list expenses from /users/user_abc/home_expenses.
+       * @principle Enforces strict data ownership for all personal financial records.
+       */
+      match /home_expenses/{homeExpenseId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && hasValidIdOnCreate(homeExpenseId);
+        allow update: if isExistingOwner(userId) && isIdImmutable();
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Rules for a user's EMI records. Only the owner can perform
+       * any read or write operations on their own records.
+       * @path /users/{userId}/emis/{emiId}
+       * @allow (create) User 'user_abc' creates a new EMI record at /users/user_abc/emis/new_emi.
+       * @deny (get) An unauthenticated user tries to read an EMI record.
+       * @principle Enforces strict data ownership for all personal financial records.
+       */
+      match /emis/{emiId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && hasValidIdOnCreate(emiId);
+        allow update: if isExistingOwner(userId) && isIdImmutable();
+        allow delete: if isExistingOwner(userId);
+
+        /**
+         * @description Rules for EMI payment records, nested under an EMI. Access is
+         * still determined by the top-level user ownership.
+         * @path /users/{userId}/emis/{emiId}/emi_payments/{emiPaymentId}
+         * @allow (create) User 'user_abc' creates a payment at /users/user_abc/emis/emi_123/emi_payments/payment_01.
+         * @deny (get) User 'user_xyz' tries to read a payment from a different user's EMI record.
+         * @principle Enforces data ownership and validates relational integrity between parent and child documents.
+         */
+        match /emi_payments/{emiPaymentId} {
+          allow get: if isOwner(userId);
+          allow list: if isOwner(userId);
+          allow create: if isOwner(userId) && hasValidEmiPaymentDataOnCreate(emiId, emiPaymentId);
+          allow update: if isExistingOwner(userId) && areEmiPaymentLinksImmutable();
+          allow delete: if isExistingOwner(userId);
+        }
+      }
+    }
+  }
+}
