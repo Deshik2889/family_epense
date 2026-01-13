@@ -9,6 +9,7 @@ export function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
+    currencyDisplay: 'symbol', // Explicitly use the symbol
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
