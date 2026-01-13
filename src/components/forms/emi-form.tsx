@@ -72,7 +72,6 @@ export function EmiForm({ setOpen }: EmiFormProps) {
 
       toast({ title: 'Success', description: 'EMI added successfully.' });
       setOpen(false);
-      form.reset();
     } catch (error) {
        toast({
         variant: 'destructive',

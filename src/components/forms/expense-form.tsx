@@ -111,7 +111,6 @@ export function ExpenseForm({ setOpen }: ExpenseFormProps) {
 
         toast({ title: 'Success', description: 'Expense added successfully.' });
         setOpen(false);
-        form.reset();
     } catch (error) {
         toast({
             variant: 'destructive',

@@ -69,7 +69,6 @@ export function IncomeForm({ setOpen }: IncomeFormProps) {
 
       toast({ title: 'Success', description: 'Income added successfully.' });
       setOpen(false);
-      form.reset();
     } catch (error) {
       toast({
         variant: 'destructive',
