@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 
@@ -23,12 +23,20 @@ export type TransactionFilter = 'all' | 'income' | 'home' | 'fuel' | 'emi';
 
 export default function Dashboard() {
   const firestore = useFirestore();
+  const transactionsRef = useRef<HTMLDivElement>(null);
 
   const [filter, setFilter] = useState<TransactionFilter>('all');
    const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 29),
     to: new Date(),
   });
+
+  const handleFilterAndScroll = (newFilter: TransactionFilter) => {
+    setFilter(newFilter);
+    setTimeout(() => {
+        transactionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100); // A small delay ensures the UI has started to update
+  };
 
   // Memoized collection references
   const incomesRef = useMemoFirebase(() => collection(firestore, `incomes`), [firestore]);
@@ -138,7 +146,7 @@ export default function Dashboard() {
                 totalExpenses={totalExpenses}
                 netBalance={netBalance}
                 activeFilter={filter}
-                setFilter={setFilter}
+                setFilter={handleFilterAndScroll}
               />
           )}
         </div>
@@ -156,7 +164,7 @@ export default function Dashboard() {
                 />
             )}
         </div>
-         <div className="grid grid-cols-1 gap-4 lg:gap-8">
+         <div className="grid grid-cols-1 gap-4 lg:gap-8" ref={transactionsRef}>
              {isLoading ? (
                 <Skeleton className="h-[400px] w-full" />
              ) : (
