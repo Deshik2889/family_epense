@@ -95,9 +95,8 @@ service cloud.firestore {
      * @principle Establishes a user's root data container while preventing destructive actions.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
+      allow read, create, write: if isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId);
       allow update: if false;
       allow delete: if false;
 

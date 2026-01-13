@@ -20,8 +20,8 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
-import { collection, Timestamp } from 'firebase/firestore';
+import { useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
+import { Timestamp, doc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 
 
@@ -56,12 +56,15 @@ export function IncomeForm({ setOpen }: IncomeFormProps) {
 
     try {
       const incomeId = uuidv4();
-      const incomeCollectionRef = collection(firestore, `users/${user.uid}/incomes`);
-      addDocumentNonBlocking(incomeCollectionRef, {
+      const incomeDocRef = doc(firestore, `users/${user.uid}/incomes/${incomeId}`);
+      
+      const payload = {
         id: incomeId,
         amount: data.amount,
         date: Timestamp.fromDate(data.date),
-      });
+      };
+
+      setDocumentNonBlocking(incomeDocRef, payload, { merge: true });
 
       toast({ title: 'Success', description: 'Income added successfully.' });
       setOpen(false);

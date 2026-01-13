@@ -20,10 +20,9 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
-import { collection, Timestamp } from 'firebase/firestore';
+import { useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
+import { collection, Timestamp, doc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
-import { revalidatePath } from 'next/cache';
 
 type EmiFormValues = z.infer<typeof EmiSchema>;
 
@@ -59,23 +58,22 @@ export function EmiForm({ setOpen }: EmiFormProps) {
 
     try {
       const emiId = uuidv4();
-      const emisCollectionRef = collection(firestore, `users/${user.uid}/emis`);
+      const emiDocRef = doc(firestore, `users/${user.uid}/emis/${emiId}`);
       
-      addDocumentNonBlocking(emisCollectionRef, {
+      const payload = {
         id: emiId,
         emiName: data.emiName,
         vehicleType: data.vehicleType,
         monthlyAmount: data.monthlyAmount,
         totalMonths: data.totalMonths,
         startDate: Timestamp.fromDate(data.startDate),
-      });
+      };
+
+      setDocumentNonBlocking(emiDocRef, payload, { merge: true });
 
       toast({ title: 'Success', description: 'EMI added successfully.' });
       setOpen(false);
       form.reset();
-      // Note: Automatic re-validation on the client will be handled by useCollection.
-      // If you need to trigger a server-side re-validation for other pages,
-      // you would need a server action.
     } catch (error) {
        toast({
         variant: 'destructive',

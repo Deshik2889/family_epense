@@ -24,8 +24,8 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { HOME_EXPENSE_CATEGORIES } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
-import { collection, Timestamp } from 'firebase/firestore';
+import { useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
+import { Timestamp, doc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 
 const FormSchema = ExpenseSchema.extend({
@@ -67,7 +67,7 @@ export function ExpenseForm({ setOpen }: ExpenseFormProps) {
 
     try {
         const expenseId = uuidv4();
-        let collectionRef;
+        let docRef;
         let payload:any = {
             id: expenseId,
             amount: data.amount,
@@ -75,14 +75,14 @@ export function ExpenseForm({ setOpen }: ExpenseFormProps) {
         };
 
         if (data.expenseType === 'fuel') {
-            collectionRef = collection(firestore, `users/${user.uid}/fuel_expenses`);
+            docRef = doc(firestore, `users/${user.uid}/fuel_expenses/${expenseId}`);
         } else {
-            collectionRef = collection(firestore, `users/${user.uid}/home_expenses`);
+            docRef = doc(firestore, `users/${user.uid}/home_expenses/${expenseId}`);
             payload.category = data.category;
             payload.notes = data.notes || '';
         }
         
-        addDocumentNonBlocking(collectionRef, payload);
+        setDocumentNonBlocking(docRef, payload, { merge: true });
 
         toast({ title: 'Success', description: 'Expense added successfully.' });
         setOpen(false);
