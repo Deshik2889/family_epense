@@ -28,16 +28,21 @@ export default function Dashboard() {
   const homeExpensesRef = useMemoFirebase(() => user ? collection(firestore, `users/${user.uid}/home_expenses`) : null, [firestore, user]);
   const emisRef = useMemoFirebase(() => user ? collection(firestore, `users/${user.uid}/emis`) : null, [firestore, user]);
 
-  const recentTransactionsQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    // This is a simplified query. For a true merge of collections, you'd need more complex logic
-    // or denormalize data. We will fetch from all three and combine/sort on the client.
-    return {
-        incomes: query(incomesRef!, orderBy('date', 'desc'), limit(10)),
-        home: query(homeExpensesRef!, orderBy('date', 'desc'), limit(10)),
-        fuel: query(fuelExpensesRef!, orderBy('date', 'desc'), limit(10))
-    };
-  }, [user, incomesRef, homeExpensesRef, fuelExpensesRef]);
+  const recentIncomesQuery = useMemoFirebase(() => {
+    if (!incomesRef) return null;
+    return query(incomesRef, orderBy('date', 'desc'), limit(10));
+  }, [incomesRef]);
+  
+  const recentHomeExpensesQuery = useMemoFirebase(() => {
+      if (!homeExpensesRef) return null;
+      return query(homeExpensesRef, orderBy('date', 'desc'), limit(10));
+  }, [homeExpensesRef]);
+  
+  const recentFuelExpensesQuery = useMemoFirebase(() => {
+      if (!fuelExpensesRef) return null;
+      return query(fuelExpensesRef, orderBy('date', 'desc'), limit(10));
+  }, [fuelExpensesRef]);
+
 
   // Fetching data
   const { data: incomes, isLoading: incomesLoading } = useCollection<Income>(incomesRef);
@@ -45,9 +50,9 @@ export default function Dashboard() {
   const { data: homeExpenses, isLoading: homeLoading } = useCollection<HomeExpense>(homeExpensesRef);
   const { data: emis, isLoading: emisLoading } = useCollection<Emi>(emisRef);
 
-  const { data: recentIncomes } = useCollection<Income>(recentTransactionsQuery?.incomes);
-  const { data: recentHomeExpenses } = useCollection<HomeExpense>(recentTransactionsQuery?.home);
-  const { data: recentFuelExpenses } = useCollection<FuelExpense>(recentTransactionsQuery?.fuel);
+  const { data: recentIncomes } = useCollection<Income>(recentIncomesQuery);
+  const { data: recentHomeExpenses } = useCollection<HomeExpense>(recentHomeExpensesQuery);
+  const { data: recentFuelExpenses } = useCollection<FuelExpense>(recentFuelExpensesQuery);
 
 
   const isLoading = isUserLoading || incomesLoading || fuelLoading || homeLoading || emisLoading;
