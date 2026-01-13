@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -25,21 +26,31 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import type { Transaction } from '@/lib/types';
+import type { TransactionFilter } from '@/app/page';
 import { formatCurrency } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Calendar as CalendarIcon, FilterX } from 'lucide-react';
 import { useFirestore, deleteDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { DateRange } from 'react-day-picker';
+import { Calendar } from '../ui/calendar';
+import { format } from 'date-fns';
+
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
+  activeFilter: TransactionFilter;
+  setFilter: (filter: TransactionFilter) => void;
+  dateRange: DateRange | undefined;
+  setDateRange: (date: DateRange | undefined) => void;
 }
 
-export function RecentTransactions({ transactions }: RecentTransactionsProps) {
+export function RecentTransactions({ transactions, activeFilter, setFilter, dateRange, setDateRange }: RecentTransactionsProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -47,9 +58,9 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
     let collectionPath = '';
     if (tx.type === 'income') collectionPath = `incomes`;
     else if (tx.type === 'fuel') collectionPath = `fuel_expenses`;
-    else if (tx.type === 'home') collectionPath = `home_expenses`;
+    else if (tx.type === 'home' || tx.type === 'emi') collectionPath = `home_expenses`;
 
-    if (collectionPath) {
+    if (collectionPath && firestore) {
       const docRef = doc(firestore, collectionPath, tx.id);
       deleteDocumentNonBlocking(docRef);
       toast({
@@ -59,11 +70,68 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
     }
   };
 
+  const getTransactionTypeForBadge = (tx: Transaction) => {
+    if (tx.type === 'home') return 'Home';
+    if (tx.type === 'fuel') return 'Fuel';
+    if (tx.type === 'income') return 'Income';
+    if (tx.type === 'emi') return 'EMI';
+    return 'Transaction';
+  };
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Recent Transactions</CardTitle>
-        <CardDescription>A list of your most recent income and expenses.</CardDescription>
+      <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between">
+        <div>
+          <CardTitle>Recent Transactions</CardTitle>
+          <CardDescription>A list of your most recent income and expenses.</CardDescription>
+        </div>
+        <div className="flex items-center gap-2 mt-4 md:mt-0">
+          {activeFilter !== 'all' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setFilter('all')}
+              className="h-8 gap-1"
+            >
+              <FilterX className="h-3.5 w-3.5" />
+              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Clear Filter</span>
+            </Button>
+          )}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1"
+              >
+                <CalendarIcon className="h-3.5 w-3.5" />
+                 <span>
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "LLL dd")} - {format(dateRange.to, "LLL dd, y")}
+                        </>
+                      ) : (
+                        format(dateRange.from, "LLL dd, y")
+                      )
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={dateRange?.from}
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
       </CardHeader>
       <CardContent>
         <Table>
@@ -87,14 +155,15 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
                     variant={tx.type === 'income' ? 'default' : 'secondary'}
                     className={cn(
                       'text-xs font-medium',
-                      tx.type === 'income' ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800' : 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800'
+                       tx.type === 'income' ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800' : 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800',
+                       tx.type === 'emi' && 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200 border-purple-200 dark:border-purple-800'
                     )}
                   >
-                    {tx.type === 'home' ? (tx.category === 'EMI' ? 'EMI' : 'Home') : tx.type === 'fuel' ? 'Fuel' : 'Income'}
+                    {getTransactionTypeForBadge(tx)}
                   </Badge>
                 </TableCell>
                  <TableCell>
-                  {(tx.type === 'home' || tx.type === 'income') && tx.category}
+                  {(tx.type === 'home' || tx.type === 'income' || tx.type === 'emi') && tx.category}
                   {tx.type === 'fuel' && <span className="text-muted-foreground">-</span>}
                 </TableCell>
                 <TableCell className={`text-right font-medium ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
@@ -128,7 +197,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
              {transactions.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} className="text-center text-muted-foreground h-24">
-                  No transactions yet.
+                  No transactions for the selected period.
                 </TableCell>
               </TableRow>
             )}

@@ -76,4 +76,5 @@ export interface Emi {
 export type Transaction = 
   | ({ id: string, amount: number, type: 'income', date: Date, category: string })
   | ({ id: string, amount: number, category: string, type: 'home', date: Date })
+  | ({ id: string, amount: number, category: string, type: 'emi', date: Date })
   | ({ id: string, amount: number, type: 'fuel', date: Date });
