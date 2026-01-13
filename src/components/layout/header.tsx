@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { BookHeart, Menu, PlusCircle } from 'lucide-react';
+import { BookHeart, LogOut, Menu, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -21,10 +21,30 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { IncomeForm } from '../forms/income-form';
 import { ExpenseForm } from '../forms/expense-form';
+import { useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Header() {
   const [isIncomeOpen, setIncomeOpen] = useState(false);
   const [isExpenseOpen, setExpenseOpen] = useState(false);
+  const auth = useAuth();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({ title: 'Success', description: 'You have been logged out.' });
+      // The AuthStateWrapper will handle redirecting to the login page.
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to log out. Please try again.',
+      });
+    }
+  };
+
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
@@ -68,6 +88,10 @@ export default function Header() {
           <Button size="sm" asChild className="h-8 gap-1">
             <Link href="/emis">Manage EMIs</Link>
           </Button>
+          <Button size="sm" variant="outline" onClick={handleLogout} className="h-8 gap-1">
+            <LogOut className="h-3.5 w-3.5" />
+            Logout
+          </Button>
         </div>
 
         {/* Mobile Dropdown Menu */}
@@ -91,6 +115,11 @@ export default function Header() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                     <Link href="/emis">Manage EMIs</Link>
+                </DropdownMenuItem>
+                 <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
                 </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
