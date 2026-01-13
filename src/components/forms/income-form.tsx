@@ -1,0 +1,118 @@
+'use client';
+
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { addIncome } from '@/lib/actions';
+import { IncomeSchema } from '@/lib/types';
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+
+type IncomeFormValues = z.infer<typeof IncomeSchema>;
+
+interface IncomeFormProps {
+  setOpen: (open: boolean) => void;
+}
+
+export function IncomeForm({ setOpen }: IncomeFormProps) {
+  const { toast } = useToast();
+  const form = useForm<IncomeFormValues>({
+    resolver: zodResolver(IncomeSchema),
+    defaultValues: {
+      amount: 0,
+      date: new Date(),
+    },
+  });
+
+  async function onSubmit(data: IncomeFormValues) {
+    const formData = new FormData();
+    formData.append('amount', String(data.amount));
+    formData.append('date', data.date.toISOString());
+
+    const result = await addIncome(formData);
+    if (result?.success) {
+      toast({ title: 'Success', description: 'Income added successfully.' });
+      setOpen(false);
+      form.reset();
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: result?.error || 'Something went wrong.',
+      });
+    }
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Amount Received</FormLabel>
+              <FormControl>
+                <Input type="number" placeholder="0.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Date</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={'outline'}
+                      className={cn(
+                        'w-full pl-3 text-left font-normal',
+                        !field.value && 'text-muted-foreground'
+                      )}
+                    >
+                      {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="flex justify-end pt-4">
+          <Button type="submit" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? "Saving..." : "Save Income"}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+}
