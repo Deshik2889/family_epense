@@ -40,12 +40,20 @@ export function IncomeForm({ setOpen }: IncomeFormProps) {
   const form = useForm<IncomeFormValues>({
     resolver: zodResolver(IncomeSchema),
     defaultValues: {
-      amount: 0,
+      amount: undefined,
       date: new Date(),
     },
   });
 
   async function onSubmit(data: IncomeFormValues) {
+    if (!firestore) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Database not available. Please try again later.',
+        });
+        return;
+    }
     try {
       const incomeId = uuidv4();
       const incomeDocRef = doc(firestore, `incomes/${incomeId}`);
@@ -81,7 +89,7 @@ export function IncomeForm({ setOpen }: IncomeFormProps) {
             <FormItem>
               <FormLabel>Amount Received</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="0.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                <Input type="number" placeholder="0.00" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -39,13 +39,21 @@ export function EmiForm({ setOpen }: EmiFormProps) {
     defaultValues: {
       emiName: '',
       vehicleType: '',
-      monthlyEmiAmount: 0,
-      totalMonths: 0,
+      monthlyEmiAmount: undefined,
+      totalMonths: undefined,
       startDate: new Date(),
     },
   });
 
   async function onSubmit(data: EmiFormValues) {
+    if (!firestore) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Database not available. Please try again later.',
+        });
+        return;
+    }
     try {
       const emiId = uuidv4();
       const emiDocRef = doc(firestore, `emis/${emiId}`);
@@ -111,7 +119,7 @@ export function EmiForm({ setOpen }: EmiFormProps) {
                 <FormItem>
                 <FormLabel>Monthly Amount</FormLabel>
                 <FormControl>
-                    <Input type="number" placeholder="3000" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                    <Input type="number" placeholder="3000" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                 </FormControl>
                 <FormMessage />
                 </FormItem>
@@ -124,7 +132,7 @@ export function EmiForm({ setOpen }: EmiFormProps) {
                 <FormItem>
                 <FormLabel>Total Months</FormLabel>
                 <FormControl>
-                    <Input type="number" placeholder="24" {...field} onChange={e => field.onChange(parseInt(e.target.value) || 0)} />
+                    <Input type="number" placeholder="24" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} />
                 </FormControl>
                 <FormMessage />
                 </FormItem>

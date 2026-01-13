@@ -44,13 +44,16 @@ export function ExpenseForm({ setOpen }: ExpenseFormProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
 
-  const emisRef = useMemoFirebase(() => collection(firestore, `emis`), [firestore]);
+  const emisRef = useMemoFirebase(() => {
+      if (!firestore) return null;
+      return collection(firestore, `emis`);
+  }, [firestore]);
   const { data: emis } = useCollection<Emi>(emisRef);
   
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      amount: 0,
+      amount: undefined,
       date: new Date(),
       expenseType: 'home',
     },
@@ -67,6 +70,14 @@ export function ExpenseForm({ setOpen }: ExpenseFormProps) {
   }, [expenseCategory, form]);
 
   async function onSubmit(data: ExpenseFormValues) {
+    if (!firestore) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Database not available. Please try again later.',
+        });
+        return;
+    }
     try {
         const expenseId = uuidv4();
         let docRef;
@@ -152,7 +163,7 @@ export function ExpenseForm({ setOpen }: ExpenseFormProps) {
                 <FormItem>
                 <FormLabel>Amount</FormLabel>
                 <FormControl>
-                    <Input type="number" placeholder="0.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                    <Input type="number" placeholder="0.00" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                 </FormControl>
                 <FormMessage />
                 </FormItem>

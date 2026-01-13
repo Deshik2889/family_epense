@@ -4,7 +4,7 @@ import { Timestamp } from 'firebase/firestore';
 
 // Schemas for form validation
 export const IncomeSchema = z.object({
-  amount: z.number().positive('Amount must be positive'),
+  amount: z.number({required_error: "Amount is required."}).positive('Amount must be positive'),
   date: z.date(),
   category: z.enum(INCOME_CATEGORIES, {
     errorMap: () => ({ message: "Please select a category." }),
@@ -12,7 +12,7 @@ export const IncomeSchema = z.object({
 });
 
 export const ExpenseSchema = z.object({
-  amount: z.number().positive('Amount must be positive'),
+  amount: z.number({required_error: "Amount is required."}).positive('Amount must be positive'),
   date: z.date(),
   category: z.enum(HOME_EXPENSE_CATEGORIES, {
     errorMap: () => ({ message: "Please select a category." }),
@@ -25,8 +25,8 @@ export const ExpenseSchema = z.object({
 export const EmiSchema = z.object({
   emiName: z.string().min(1, 'EMI name is required'),
   vehicleType: z.string().min(1, 'Vehicle type is required'),
-  monthlyEmiAmount: z.number().positive('Amount must be positive'),
-  totalMonths: z.number().int().positive('Must be a positive number of months'),
+  monthlyEmiAmount: z.number({required_error: "Amount is required."}).positive('Amount must be positive'),
+  totalMonths: z.number({required_error: "Total months is required."}).int().positive('Must be a positive number of months'),
   startDate: z.date(),
 });
 
