@@ -1,17 +1,36 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { initializeApp, getApps, getApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+import { getAuth } from "firebase-admin/auth";
+import { cookies } from 'next/headers';
+import { credential } from "firebase-admin";
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
+const serviceKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
-// Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+if (!serviceKey) {
+  throw new Error("The FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set. Please add it to your .env.local file.");
+}
+
+const serviceAccount = JSON.parse(serviceKey);
+
+// Initialize Firebase Admin
+const app = !getApps().length ? initializeApp({
+    credential: credential.cert(serviceAccount)
+}) : getApp();
 const db = getFirestore(app);
+const auth = getAuth(app);
 
-export { db };
+
+export async function getUserId() {
+  try {
+    const cookieStore = cookies();
+    const sessionCookie = cookieStore.get('session')?.value;
+    if (!sessionCookie) return null;
+    const decodedToken = await auth.verifySessionCookie(sessionCookie, true);
+    return decodedToken.uid;
+  } catch (error) {
+    // Session cookie is invalid or expired.
+    return null;
+  }
+}
+
+export { db, auth };

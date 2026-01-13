@@ -9,8 +9,9 @@ import {
   Timestamp,
   orderBy,
   query,
+  doc,
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, getUserId } from './firebase';
 import {
   IncomeSchema,
   ExpenseSchema,
@@ -21,6 +22,7 @@ import {
   type Emi,
 } from './types';
 import { z } from 'zod';
+import { v4 as uuidv4 } from 'uuid';
 
 // Helper to convert Firestore docs to plain objects
 function docsToObjects(docs) {
@@ -31,6 +33,8 @@ function docsToObjects(docs) {
       ...data,
       id: doc.id,
       date: data.date.toDate(),
+      // Handle optional startDate for EMIs
+      ...(data.startDate && { startDate: data.startDate.toDate() }),
     });
   });
   return objects;
@@ -38,6 +42,9 @@ function docsToObjects(docs) {
 
 // Income Actions
 export async function addIncome(formData: FormData) {
+  const userId = await getUserId();
+  if (!userId) return { success: false, error: 'User not authenticated.' };
+
   const rawData = Object.fromEntries(formData.entries());
   const validatedFields = IncomeSchema.safeParse({
     amount: parseFloat(rawData.amount as string),
@@ -52,7 +59,9 @@ export async function addIncome(formData: FormData) {
 
   try {
     const { amount, date } = validatedFields.data;
-    await addDoc(collection(db, 'income'), {
+    const incomeId = uuidv4();
+    await addDoc(collection(db, `users/${userId}/incomes`), {
+      id: incomeId,
       amount,
       date: Timestamp.fromDate(date),
     });
@@ -65,7 +74,9 @@ export async function addIncome(formData: FormData) {
 }
 
 export async function getIncome(): Promise<Income[]> {
-  const q = query(collection(db, 'income'), orderBy('date', 'desc'));
+  const userId = await getUserId();
+  if (!userId) return [];
+  const q = query(collection(db, `users/${userId}/incomes`), orderBy('date', 'desc'));
   const querySnapshot = await getDocs(q);
   return docsToObjects(querySnapshot.docs);
 }
@@ -76,6 +87,9 @@ const ExpenseFormSchema = ExpenseSchema.extend({
 });
 
 export async function addExpense(formData: FormData) {
+    const userId = await getUserId();
+    if (!userId) return { success: false, error: 'User not authenticated.' };
+
   const rawData = Object.fromEntries(formData.entries());
   const validatedFields = ExpenseFormSchema.safeParse({
     amount: parseFloat(rawData.amount as string),
@@ -93,13 +107,17 @@ export async function addExpense(formData: FormData) {
 
   try {
     const { amount, date, expenseType, category, notes } = validatedFields.data;
+    const expenseId = uuidv4();
+    
     if (expenseType === 'fuel') {
-      await addDoc(collection(db, 'fuel_expenses'), {
+      await addDoc(collection(db, `users/${userId}/fuel_expenses`), {
+        id: expenseId,
         amount,
         date: Timestamp.fromDate(date),
       });
     } else {
-      await addDoc(collection(db, 'home_expenses'), {
+      await addDoc(collection(db, `users/${userId}/home_expenses`), {
+        id: expenseId,
         amount,
         date: Timestamp.fromDate(date),
         category,
@@ -115,19 +133,26 @@ export async function addExpense(formData: FormData) {
 }
 
 export async function getFuelExpenses(): Promise<FuelExpense[]> {
-  const q = query(collection(db, 'fuel_expenses'), orderBy('date', 'desc'));
+  const userId = await getUserId();
+  if (!userId) return [];
+  const q = query(collection(db, `users/${userId}/fuel_expenses`), orderBy('date', 'desc'));
   const querySnapshot = await getDocs(q);
   return docsToObjects(querySnapshot.docs);
 }
 
 export async function getHomeExpenses(): Promise<HomeExpense[]> {
-  const q = query(collection(db, 'home_expenses'), orderBy('date', 'desc'));
+    const userId = await getUserId();
+    if (!userId) return [];
+  const q = query(collection(db, `users/${userId}/home_expenses`), orderBy('date', 'desc'));
   const querySnapshot = await getDocs(q);
   return docsToObjects(querySnapshot.docs);
 }
 
 // EMI Actions
 export async function addEmi(formData: FormData) {
+    const userId = await getUserId();
+    if (!userId) return { success: false, error: 'User not authenticated.' };
+
   const rawData = Object.fromEntries(formData.entries());
   const validatedFields = EmiSchema.safeParse({
     name: rawData.name,
@@ -146,7 +171,9 @@ export async function addEmi(formData: FormData) {
   
   try {
     const { name, vehicleType, monthlyAmount, totalMonths, startDate } = validatedFields.data;
-    await addDoc(collection(db, 'emis'), {
+    const emiId = uuidv4();
+    await addDoc(collection(db, `users/${userId}/emis`), {
+      id: emiId,
       name,
       vehicleType,
       monthlyAmount,
@@ -163,6 +190,8 @@ export async function addEmi(formData: FormData) {
 }
 
 export async function getEmis(): Promise<Emi[]> {
-  const querySnapshot = await getDocs(collection(db, 'emis'));
+    const userId = await getUserId();
+    if (!userId) return [];
+  const querySnapshot = await getDocs(collection(db, `users/${userId}/emis`));
   return docsToObjects(querySnapshot.docs);
 }
