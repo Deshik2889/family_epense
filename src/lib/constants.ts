@@ -1,17 +1,11 @@
 export const HOME_EXPENSE_CATEGORIES = [
-  "Food",
   "Groceries",
-  "Electricity",
   "Rent",
-  "Internet",
-  "Water",
-  "Entertainment",
-  "Transportation",
-  "Healthcare",
-  "Education",
-  "Clothing",
+  "Recharge",
+  "Scooty Fuel",
   "EMI",
-  "Other",
+  "stax",
+  "Other"
 ] as const;
 
 export const INCOME_CATEGORIES = [
