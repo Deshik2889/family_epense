@@ -39,7 +39,7 @@ export function EmiForm({ setOpen }: EmiFormProps) {
     defaultValues: {
       emiName: '',
       vehicleType: '',
-      monthlyAmount: 0,
+      monthlyEmiAmount: 0,
       totalMonths: 0,
       startDate: new Date(),
     },
@@ -54,7 +54,7 @@ export function EmiForm({ setOpen }: EmiFormProps) {
         id: emiId,
         emiName: data.emiName,
         vehicleType: data.vehicleType,
-        monthlyAmount: data.monthlyAmount,
+        monthlyEmiAmount: data.monthlyEmiAmount,
         totalMonths: data.totalMonths,
         startDate: Timestamp.fromDate(data.startDate),
       };
@@ -105,7 +105,7 @@ export function EmiForm({ setOpen }: EmiFormProps) {
         <div className="grid grid-cols-2 gap-4">
             <FormField
             control={form.control}
-            name="monthlyAmount"
+            name="monthlyEmiAmount"
             render={({ field }) => (
                 <FormItem>
                 <FormLabel>Monthly Amount</FormLabel>

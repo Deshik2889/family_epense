@@ -3,7 +3,7 @@ import { differenceInCalendarMonths } from 'date-fns';
 interface EmiForCalc {
   startDate: Date;
   totalMonths: number;
-  monthlyAmount: number;
+  monthlyEmiAmount: number;
 }
 
 export function formatCurrency(amount: number) {
@@ -36,8 +36,8 @@ export function calculateEmiProgress(emi: EmiForCalc) {
 
   const paidMonths = Math.min(Math.max(0, monthsPassed), emi.totalMonths);
   const remainingMonths = emi.totalMonths - paidMonths;
-  const totalPaid = paidMonths * emi.monthlyAmount;
-  const totalAmount = emi.totalMonths * emi.monthlyAmount;
+  const totalPaid = paidMonths * emi.monthlyEmiAmount;
+  const totalAmount = emi.totalMonths * emi.monthlyEmiAmount;
   const remainingAmount = totalAmount - totalPaid;
   const progressPercentage = (paidMonths / emi.totalMonths) * 100;
 

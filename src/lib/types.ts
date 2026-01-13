@@ -23,7 +23,7 @@ export const ExpenseSchema = z.object({
 export const EmiSchema = z.object({
   emiName: z.string().min(1, 'EMI name is required'),
   vehicleType: z.string().min(1, 'Vehicle type is required'),
-  monthlyAmount: z.number().positive('Amount must be positive'),
+  monthlyEmiAmount: z.number().positive('Amount must be positive'),
   totalMonths: z.number().int().positive('Must be a positive number of months'),
   startDate: z.date(),
 });
@@ -56,7 +56,7 @@ export interface Emi {
   id: string;
   emiName: string;
   vehicleType: string;
-  monthlyAmount: number;
+  monthlyEmiAmount: number;
   totalMonths: number;
   startDate: Timestamp; // Using Firestore Timestamp
 }
